@@ -32,6 +32,7 @@ interface Cell {
   x: number;
   y: number;
   h: number;
+  right: number;
   cx: number;
   cy: number;
   bottom: number;
@@ -40,6 +41,7 @@ interface Cell {
 interface Anchor {
   field: Field;
   x: number;
+  right: number;
   cx: number;
 }
 
@@ -58,6 +60,7 @@ function toCell(line: OcrLine): Cell | null {
     x,
     y,
     h: Math.max(bottom - y, 1),
+    right,
     cx: (x + right) / 2,
     cy: (y + bottom) / 2,
     bottom,
@@ -87,9 +90,82 @@ function rowCenter(row: Cell[]): number {
   return row.reduce((sum, cell) => sum + cell.cy, 0) / row.length;
 }
 
-function matchField(text: string): Field | null {
-  const hit = FIELDS.find((item) => text.includes(item.label));
-  return hit?.field ?? null;
+function compactText(text: string): string {
+  return text.replace(/\s+/g, '');
+}
+
+function canGrowHeader(text: string): boolean {
+  return FIELDS.some((item) => item.label.startsWith(text));
+}
+
+function isGroupHeader(text: string): boolean {
+  const compact = compactText(text);
+  if (!compact.includes('分组')) return false;
+  return !FIELDS.some((item) => compact.includes(item.label));
+}
+
+export function omitGroupColumn(lines: OcrLine[]): OcrLine[] {
+  const cells = lines.flatMap((line) => {
+    const cell = toCell(line);
+    return cell ? [cell] : [];
+  });
+  const header = clusterRows(cells).find((row) => row.some((cell) => cell.text.includes('玩家名称')));
+  if (!header) return lines;
+  const sorted = [...header].sort((a, b) => a.x - b.x);
+  const group = sorted.find((cell) => isGroupHeader(cell.text));
+  if (!group) return lines;
+  const index = sorted.indexOf(group);
+  const previous = sorted[index - 1];
+  const next = sorted[index + 1];
+  const left = previous ? (previous.right + group.x) / 2 : group.x;
+  const right = next ? (group.right + next.x) / 2 : group.right;
+  return lines.filter((line) => {
+    const cell = toCell(line);
+    if (!cell) return true;
+    return cell.cx < left || cell.cx > right;
+  });
+}
+
+function resolveHeader(text: string): Field | null {
+  const exact = FIELDS.find((item) => text.includes(item.label));
+  if (exact) return exact.field;
+  if (text.includes('风尚')) return 'fashion';
+  if (text.includes('入会')) return 'joinedText';
+  return null;
+}
+
+function headerAnchors(header: Cell[]): Anchor[] {
+  const anchors: Anchor[] = [];
+  const used = new Set<Cell>();
+  for (let i = 0; i < header.length; i++) {
+    if (used.has(header[i])) continue;
+    const group = [header[i]];
+    let text = compactText(header[i].text);
+    for (let j = i + 1; j < header.length; j++) {
+      const gap = header[j].x - header[j - 1].right;
+      if (gap > Math.max(header[j].h, header[j - 1].h, 8)) break;
+      const grown = text + compactText(header[j].text);
+      if (!canGrowHeader(grown)) break;
+      group.push(header[j]);
+      text = grown;
+    }
+    const field = resolveHeader(text);
+    if (!field || anchors.some((anchor) => anchor.field === field)) continue;
+    const x = Math.min(...group.map((cell) => cell.x));
+    const right = Math.max(...group.map((cell) => cell.right));
+    anchors.push({ field, x, right, cx: (x + right) / 2 });
+    group.forEach((cell) => used.add(cell));
+  }
+  return anchors;
+}
+
+function fieldOf(anchors: Anchor[], cell: Cell): Field {
+  const sorted = [...anchors].sort((a, b) => a.x - b.x);
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const boundary = (sorted[i].right + sorted[i + 1].x) / 2;
+    if (cell.cx < boundary) return sorted[i].field;
+  }
+  return sorted[sorted.length - 1].field;
 }
 
 const INT32_MAX = 2_147_483_647;
@@ -130,8 +206,15 @@ function optionalText(cells: Cell[]): string | null {
   return text.length > 0 ? text : null;
 }
 
+function joinedOf(cells: Cell[]): string | null {
+  const combined = textOf(cells).replace(/\s+/g, '');
+  const matched = combined.match(/\d+天/);
+  if (matched) return matched[0];
+  return optionalText(cells);
+}
+
 export function parseMemberTable(lines: OcrLine[]): ParsedMember[] {
-  const cells = lines.flatMap((line) => {
+  const cells = omitGroupColumn(lines).flatMap((line) => {
     const cell = toCell(line);
     return cell ? [cell] : [];
   });
@@ -139,12 +222,7 @@ export function parseMemberTable(lines: OcrLine[]): ParsedMember[] {
   const header = rows.find((row) => row.some((cell) => cell.text.includes('玩家名称')));
   if (!header) return [];
 
-  const anchors: Anchor[] = [];
-  for (const cell of header) {
-    const field = matchField(cell.text);
-    if (!field || anchors.some((anchor) => anchor.field === field)) continue;
-    anchors.push({ field, x: cell.x, cx: cell.cx });
-  }
+  const anchors = headerAnchors(header);
   const nameAnchor = anchors.find((anchor) => anchor.field === 'playerName');
   if (!nameAnchor) return [];
 
@@ -152,18 +230,11 @@ export function parseMemberTable(lines: OcrLine[]): ParsedMember[] {
   const members: ParsedMember[] = [];
   for (const row of rows) {
     if (rowCenter(row) <= headerCy) continue;
-    const rankCell = row
-      .filter((cell) => cell.cx < nameAnchor.x && parseInteger(cell.text) !== null)
-      .sort((a, b) => b.cx - a.cx)[0];
-    const rank = rankCell ? parseInteger(rankCell.text) : null;
-    if (rank === null) continue;
 
     const grouped = new Map<Field, Cell[]>();
     for (const cell of row) {
-      if (cell === rankCell || cell.cx < nameAnchor.x) continue;
-      const anchor = anchors.reduce((best, item) =>
-        Math.abs(item.cx - cell.cx) < Math.abs(best.cx - cell.cx) ? item : best,
-      );
+      if (cell.cx < nameAnchor.x) continue;
+      const anchor = { field: fieldOf(anchors, cell) };
       const list = grouped.get(anchor.field) ?? [];
       list.push(cell);
       grouped.set(anchor.field, list);
@@ -172,16 +243,21 @@ export function parseMemberTable(lines: OcrLine[]): ParsedMember[] {
     const playerName = textOf(grouped.get('playerName') ?? []);
     if (!playerName || playerName.includes('玩家名称')) continue;
 
-    members.push({
+    const member = {
       playerName,
-      rank,
+      rank: members.length + 1,
       level: integerOf(grouped.get('level') ?? [], anchorCx(anchors, 'level')),
       path: optionalText(grouped.get('path') ?? []),
       score: integerOf(grouped.get('score') ?? [], anchorCx(anchors, 'score')),
       fashion: integerOf(grouped.get('fashion') ?? [], anchorCx(anchors, 'fashion')),
       weeklyActivity: integerOf(grouped.get('weeklyActivity') ?? [], anchorCx(anchors, 'weeklyActivity')),
-      joinedText: optionalText(grouped.get('joinedText') ?? []),
-    });
+      joinedText: joinedOf(grouped.get('joinedText') ?? []),
+    };
+    const hasDetail = (['level', 'path', 'score', 'fashion', 'weeklyActivity', 'joinedText'] as const).some(
+      (field) => (grouped.get(field) ?? []).length > 0,
+    );
+    if (!hasDetail) continue;
+    members.push(member);
   }
   return members;
 }

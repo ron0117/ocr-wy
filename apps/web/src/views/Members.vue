@@ -2,7 +2,7 @@
     <div class="page-head">
       <div>
         <h1>人员列表</h1>
-        <p>排名和非凡评分的箭头表示相对上一次写入的升降。手工保存会把改前的排名和评分记为上次。点表头只改变当前排序。</p>
+        <p>非凡评分的箭头表示相对上一次写入的升降。手工保存会把改前的评分记为上次。点表头只改变当前排序。</p>
       </div>
       <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
     </div>
@@ -28,19 +28,12 @@
         :default-sort="{ prop: 'rank', order: 'ascending' }"
         @sort-change="onSort"
       >
-        <el-table-column prop="rank" label="排名" width="120" sortable="custom">
-          <template #default="{ row }">
-            <span>{{ row.rank }}</span>
-            <span v-if="row.rankChange" :class="row.rankChange.direction === 'up' ? 'delta-up' : 'delta-down'">
-              {{ row.rankChange.direction === 'up' ? '↑' : '↓' }}{{ row.rankChange.delta }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="playerName" label="玩家名称" min-width="140" sortable="custom" />
-        <el-table-column prop="clubName" label="俱乐部名称" min-width="140" sortable="custom" />
+        <el-table-column prop="rank" label="排名" width="90" sortable="custom" />
+        <el-table-column prop="playerName" label="玩家名称" min-width="100" sortable="custom" />
+        <el-table-column prop="clubName" label="俱乐部名称" min-width="100" sortable="custom" />
         <el-table-column prop="level" label="等级" width="90" sortable="custom" />
         <el-table-column prop="path" label="途径" width="110" sortable="custom" />
-        <el-table-column prop="score" label="非凡评分" width="140" sortable="custom">
+        <el-table-column prop="score" label="非凡评分" minWidth="100" sortable="custom">
           <template #default="{ row }">
             <span>{{ row.score ?? '—' }}</span>
             <span v-if="row.scoreChange" :class="row.scoreChange.direction === 'up' ? 'delta-up' : 'delta-down'">
@@ -48,9 +41,9 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="fashion" label="风尚度" width="110" sortable="custom" />
+        <el-table-column prop="fashion" label="风尚度" minWidth="100" sortable="custom" />
         <el-table-column prop="weeklyActivity" label="周活跃" width="110" sortable="custom" />
-        <el-table-column prop="joinedText" label="入会时间" width="120" sortable="custom" />
+        <el-table-column prop="joinedText" label="入会时间" width="150" sortable="custom" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row as MemberItem)">编辑</el-button>

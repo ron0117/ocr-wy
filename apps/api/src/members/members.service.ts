@@ -15,8 +15,8 @@ import { PrismaService } from '../prisma/prisma.module';
 import { StorageService } from '../storage/storage.service';
 import { ListMembersQuery, WriteMemberDto, type MemberSort } from './dto';
 import { MemberAiService } from './member-ai.service';
-import { parseMemberTable, type OcrLine, type ParsedMember } from './parse-member-table';
-import { uniqueByName } from './structure-members';
+import { omitGroupColumn, parseMemberTable, type OcrLine, type ParsedMember } from './parse-member-table';
+import { assignRanks, fillMissingFields, uniqueByName } from './structure-members';
 
 interface Change {
   direction: 'up' | 'down';
@@ -52,9 +52,10 @@ export class MembersService {
       const detected = await detectImageType(file.buffer);
       if (!detected) throw new BadRequestException(`${name} 不是 PNG、JPEG 或 WebP 图片`);
       const recognized = await this.ocr.recognize(file.buffer, name);
-      if (recognized.lines.length === 0) throw new UnprocessableEntityException(`${name} 没有识别到文字`);
-      const rows = uniqueByName(parseMemberTable(recognized.lines));
-      prepared.push({ file, detected, lines: recognized.lines, rows, objectName: '' });
+      const lines = omitGroupColumn(recognized.lines);
+      if (lines.length === 0) throw new UnprocessableEntityException(`${name} 没有识别到文字`);
+      const rows = uniqueByName(parseMemberTable(lines));
+      prepared.push({ file, detected, lines, rows, objectName: '' });
     }
 
     const merged = await this.merge(prepared);
@@ -111,7 +112,7 @@ export class MembersService {
 
   private async merge(images: PreparedImage[]): Promise<ParsedMember[]> {
     const localRows = uniqueByName(images.flatMap((image) => image.rows));
-    if (!this.memberAi.isEnabled()) return localRows;
+    if (!this.memberAi.isEnabled()) return assignRanks(localRows);
     try {
       const filtered = await this.memberAi.filterAndDedupe(
         images.map((image) => ({
@@ -120,14 +121,18 @@ export class MembersService {
           candidates: image.rows,
         })),
       );
-      if (filtered.length > 0) return filtered;
+      if (filtered.length > 0) {
+        const names = new Set(filtered.map((row) => row.playerName));
+        const kept = localRows.filter((row) => names.has(row.playerName));
+        return assignRanks(kept.length > 0 ? fillMissingFields(kept, filtered) : filtered);
+      }
       this.logger.warn('AI 没有筛出人员，改用坐标整理结果');
     } catch (error) {
       if (localRows.length === 0) throw error;
       const message = error instanceof Error ? error.message : 'AI 整理失败';
       this.logger.warn(`AI 筛选去重失败，改用坐标整理：${message}`);
     }
-    return localRows;
+    return assignRanks(localRows);
   }
 
   async list(userId: string, query: ListMembersQuery) {
