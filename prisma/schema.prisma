@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  UPLOADED
+  OCR_PROCESSING
+  OCR_COMPLETED
+  AI_PROCESSING
+  REVIEW_REQUIRED
+  COMPLETED
+  FAILED
+}
+
+enum ResourceType {
+  SOURCE_IMAGE
+  OCR_JSON
+  STRUCTURED_JSON
+  EXCEL
+}
+
+enum ExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique
+  passwordHash String
+  name         String?
+  tasks        OcrTask[]
+  templates    OcrTemplate[]
+  clubs        Club[]
+  imports      ImportBatch[]
+  createdAt    DateTime      @default(now())
+
+  @@map("users")
+}
+
+model Club {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  name      String
+  leader    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User          @relation(fields: [userId], references: [id])
+  members Member[]
+  imports ImportBatch[]
+
+  @@unique([userId, name])
+  @@index([userId, createdAt])
+  @@map("clubs")
+}
+
+model Member {
+  id             String   @id @default(uuid()) @db.Uuid
+  clubId         String   @db.Uuid
+  playerName     String
+  rank           Int
+  level          Int?
+  path           String?
+  score          Int?
+  fashion        Int?
+  weeklyActivity Int?
+  joinedText     String?
+  previousRank   Int?
+  previousScore  Int?
+  dataUpdatedAt  DateTime
+  createdAt      DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id])
+
+  @@unique([clubId, playerName])
+  @@index([clubId, rank])
+  @@map("members")
+}
+
+model ImportBatch {
+  id         String   @id @default(uuid()) @db.Uuid
+  clubId     String   @db.Uuid
+  userId     String   @db.Uuid
+  objectName String
+  rowCount   Int
+  createdAt  DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([clubId, createdAt])
+  @@map("import_batches")
+}
+
+model OcrTask {
+  id             String     @id @default(uuid()) @db.Uuid
+  userId         String     @db.Uuid
+  title          String
+  status         TaskStatus @default(UPLOADED)
+  templateId     String?    @db.Uuid
+  sourceCount    Int        @default(0)
+  dataVersion    Int        @default(0)
+  idempotencyKey String?
+  errorCode      String?
+  errorMessage   String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user      User             @relation(fields: [userId], references: [id])
+  template  OcrTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  images    OcrImage[]
+  records   OcrRecord[]
+  messages  AiMessage[]
+  resources ResourceFile[]
+  exports   ExportJob[]
+  revisions RecordRevision[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([status, updatedAt])
+  @@map("ocr_tasks")
+}
+
+model OcrImage {
+  id             String   @id @default(uuid()) @db.Uuid
+  taskId         String   @db.Uuid
+  resourceId     String   @db.Uuid
+  pageIndex      Int      @default(0)
+  ocrText        String   @default("")
+  ocrJson        Json?
+  meanConfidence Float?
+  createdAt      DateTime @default(now())
+
+  task OcrTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, pageIndex])
+  @@map("ocr_images")
+}
+
+model OcrRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  taskId      String   @db.Uuid
+  rowIndex    Int
+  productName String
+  price       Decimal? @db.Decimal(12, 2)
+  quantity    Decimal? @db.Decimal(12, 3)
+  total       Decimal? @db.Decimal(14, 2)
+  unit        String?
+  confidence  Float?
+  rawText     String?
+  extra       Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  task OcrTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, rowIndex])
+  @@index([taskId])
+  @@map("ocr_records")
+}
+
+model RecordRevision {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @db.Uuid
+  version   Int
+  source    String
+  snapshot  Json
+  createdAt DateTime @default(now())
+
+  task OcrTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, version])
+  @@index([taskId, version])
+  @@map("record_revisions")
+}
+
+model OcrTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  name        String
+  description String?
+  schema      Json
+  prompt      String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User      @relation(fields: [userId], references: [id])
+  tasks OcrTask[]
+
+  @@unique([userId, name])
+  @@map("ocr_templates")
+}
+
+model AiMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @db.Uuid
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  task OcrTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@map("ai_messages")
+}
+
+model ResourceFile {
+  id           String       @id @default(uuid()) @db.Uuid
+  taskId       String       @db.Uuid
+  type         ResourceType
+  objectName   String       @unique
+  contentType  String
+  sizeBytes    BigInt
+  sha256       String
+  originalName String?
+  createdAt    DateTime     @default(now())
+
+  task OcrTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, type])
+  @@map("resource_files")
+}
+
+model ExportJob {
+  id           String       @id @default(uuid()) @db.Uuid
+  taskId       String       @db.Uuid
+  status       ExportStatus @default(PENDING)
+  resourceId   String?      @db.Uuid
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  completedAt  DateTime?
+
+  task OcrTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@map("export_jobs")
+}

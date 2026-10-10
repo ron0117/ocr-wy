@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ocr
+      POSTGRES_PASSWORD: ocr
+      POSTGRES_DB: ocr
+    ports:
+      - "5432:5432"
+    volumes:
+      - ocr_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocr -d ocr"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ocr:
+    profiles: ["ocr"]
+    build: ./services/ocr-python
+    ports:
+      - "8000:8000"
+
+volumes:
+  ocr_pg:
