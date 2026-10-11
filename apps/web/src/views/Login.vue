@@ -16,10 +16,6 @@
           <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" style="margin-bottom: 12px" />
           <el-button type="primary" native-type="submit" :loading="loading" style="width: 100%">登录</el-button>
         </el-form>
-        <div style="margin-top: 14px">
-          <el-text type="info">没有账号？</el-text>
-          <el-button link type="primary" @click="router.push('/register')">注册</el-button>
-        </div>
       </el-card>
     </div>
   </div>
@@ -45,7 +41,7 @@ async function submit() {
   try {
     const result = await login(email.value, password.value);
     auth.setSession(result.token, result.user);
-    await router.push('/clubs');
+    await router.push('/');
   } catch (cause) {
     error.value = errorMessage(cause, '登录失败');
   } finally {

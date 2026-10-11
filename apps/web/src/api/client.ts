@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthUser, ProductRow, TaskStatus } from '@ocr/shared-types';
+import type { AuthUser, PermissionMenu, ProductRow, TaskStatus } from '@ocr/shared-types';
 
 export const api = axios.create({
   baseURL: '/api/v1',
@@ -111,6 +111,7 @@ export interface ClubItem {
   leader: string | null;
   createdAt: string;
   updatedAt: string;
+  creatorEmail: string | null;
 }
 
 export interface MemberChange {
@@ -133,6 +134,7 @@ export interface MemberItem {
   dataUpdatedAt: string;
   rankChange: MemberChange | null;
   scoreChange: MemberChange | null;
+  notifyBound: boolean;
 }
 
 export async function listClubs() {
@@ -196,18 +198,207 @@ export async function deleteMember(memberId: string) {
   await api.delete(`/members/${memberId}`);
 }
 
+export async function deleteMembers(ids: string[]) {
+  const { data } = await api.post<{ deleted: number }>('/members/batch-delete', { ids });
+  return data;
+}
+
+export async function unbindMember(memberId: string) {
+  const { data } = await api.delete<{ ok: boolean; alreadyUnbound: boolean }>(`/members/${memberId}/wecom-binding`);
+  return data;
+}
+
+export interface AudienceOption {
+  id: string;
+  name: string;
+}
+
+export interface WecomAudience {
+  parties: AudienceOption[];
+  tags: AudienceOption[];
+  users: AudienceOption[];
+}
+
+export interface ActivityItem {
+  id: string;
+  title: string;
+  status: 'PUBLISHED' | 'ENDED';
+  startsAt: string;
+  remindAt: string | null;
+  publishedAt: string;
+  endedAt: string | null;
+  clubs: Array<{ id: string; name: string }>;
+  publishStatus: 'SENT' | 'FAILED' | null;
+  publishError: string | null;
+  notifications: Array<{
+    id: string;
+    kind: 'PUBLISH' | 'REMIND';
+    trigger: 'AUTO' | 'MANUAL';
+    status: 'SENT' | 'FAILED';
+    recipientCount: number;
+    errorMessage: string | null;
+    createdAt: string;
+  }>;
+}
+
+export interface CheckInRow {
+  id: string;
+  playerName: string;
+  clubName: string;
+  notifyBound: boolean;
+  checkedIn: boolean;
+  checkedAt: string | null;
+}
+
+export async function wecomAudience() {
+  const { data } = await api.get<WecomAudience>('/wecom/audience');
+  return data;
+}
+
+export async function listActivities() {
+  const { data } = await api.get<ActivityItem[]>('/activities');
+  return data;
+}
+
+export async function createActivity(payload: {
+  title: string;
+  clubIds: string[];
+  startsAt: string;
+  remindAt?: string | null;
+  partyIds?: string[];
+  tagIds?: string[];
+  userIds?: string[];
+}) {
+  const { data } = await api.post<ActivityItem>('/activities', payload);
+  return data;
+}
+
+export async function getActivity(activityId: string) {
+  const { data } = await api.get<ActivityItem>(`/activities/${activityId}`);
+  return data;
+}
+
+export async function endActivity(activityId: string) {
+  const { data } = await api.post<ActivityItem>(`/activities/${activityId}/end`);
+  return data;
+}
+
+export async function activityCheckIns(activityId: string) {
+  const { data } = await api.get<CheckInRow[]>(`/activities/${activityId}/check-ins`);
+  return data;
+}
+
+export async function resendActivity(activityId: string, kind: 'publish' | 'remind') {
+  const { data } = await api.post(`/activities/${activityId}/notifications`, { kind });
+  return data;
+}
+
+export const playerApi = axios.create({
+  baseURL: '/api/v1',
+  timeout: 30_000,
+});
+
+playerApi.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem('wecom_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+export interface PlayerActivity {
+  id: string;
+  title: string;
+  status: 'PUBLISHED' | 'ENDED';
+  startsAt: string;
+  clubs: Array<{ id: string; name: string }>;
+  phase: 'unbound' | 'ready' | 'other_club' | 'closed';
+  candidates?: Array<{ id: string; playerName: string; clubName: string }>;
+  member?: { id: string; playerName: string; clubName: string } | null;
+  checkedAt?: string | null;
+}
+
+export async function playerActivity(activityId: string) {
+  const { data } = await playerApi.get<PlayerActivity>(`/player/activities/${activityId}`);
+  return data;
+}
+
+export async function bindPlayerRole(activityId: string, memberId: string) {
+  const { data } = await playerApi.post(`/player/activities/${activityId}/binding`, { memberId });
+  return data;
+}
+
+export async function playerCheckIn(activityId: string) {
+  const { data } = await playerApi.post<{ checkedAt: string }>(`/player/activities/${activityId}/check-in`);
+  return data;
+}
+
 export async function login(email: string, password: string) {
   const { data } = await api.post<{ token: string; user: AuthUser }>('/auth/login', { email, password });
   return data;
 }
 
-export async function register(email: string, password: string, name: string) {
-  const { data } = await api.post<{ token: string; user: AuthUser }>('/auth/register', {
-    email,
-    password,
-    name: name || undefined,
-  });
+export async function permission() {
+  const { data } = await api.post<{ menus: PermissionMenu[] }>('/permission');
   return data;
+}
+
+export interface AccountItem {
+  id: string;
+  email: string;
+  name: string | null;
+  disabled: boolean;
+  roleId: string | null;
+  roleName: string | null;
+}
+
+export async function listAccounts(email?: string) {
+  const { data } = await api.get<AccountItem[]>('/accounts', { params: email ? { email } : {} });
+  return data;
+}
+
+export async function createAccount(body: { email: string; password: string; name?: string; roleId: string }) {
+  const { data } = await api.post<AccountItem>('/accounts', body);
+  return data;
+}
+
+export async function updateAccount(
+  id: string,
+  body: { name?: string; roleId?: string; disabled?: boolean; password?: string },
+) {
+  const { data } = await api.patch<AccountItem>(`/accounts/${id}`, body);
+  return data;
+}
+
+export async function deleteAccount(id: string) {
+  await api.delete(`/accounts/${id}`);
+}
+
+export interface RoleItem {
+  id: string;
+  name: string;
+  isSuper: boolean;
+  menuKeys: string[];
+  clubIds: string[];
+  menuCount: number;
+  clubCount: number;
+}
+
+export async function listRoles() {
+  const { data } = await api.get<RoleItem[]>('/roles');
+  return data;
+}
+
+export async function createRole(body: { name: string; menuKeys: string[]; clubIds: string[] }) {
+  const { data } = await api.post<RoleItem>('/roles', body);
+  return data;
+}
+
+export async function updateRole(id: string, body: { name: string; menuKeys: string[]; clubIds: string[] }) {
+  const { data } = await api.patch<RoleItem>(`/roles/${id}`, body);
+  return data;
+}
+
+export async function deleteRole(id: string) {
+  await api.delete(`/roles/${id}`);
 }
 
 export async function me() {

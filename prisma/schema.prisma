@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -31,31 +32,101 @@ enum ExportStatus {
   FAILED
 }
 
+enum ActivityStatus {
+  PUBLISHED
+  ENDED
+}
+
+enum RecipientKind {
+  PARTY
+  TAG
+  USER
+}
+
+enum NotificationKind {
+  PUBLISH
+  REMIND
+}
+
+enum NotificationTrigger {
+  AUTO
+  MANUAL
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+}
+
 model User {
   id           String        @id @default(uuid()) @db.Uuid
   email        String        @unique
   passwordHash String
   name         String?
+  roleId       String?       @db.Uuid
+  disabled     Boolean       @default(false)
   tasks        OcrTask[]
   templates    OcrTemplate[]
   clubs        Club[]
   imports      ImportBatch[]
+  activities   Activity[]
+  role         Role?         @relation(fields: [roleId], references: [id])
   createdAt    DateTime      @default(now())
 
+  @@index([roleId])
   @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  isSuper   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  users User[]
+  menus RoleMenu[]
+  clubs RoleClub[]
+
+  @@map("roles")
+}
+
+model RoleMenu {
+  roleId  String @db.Uuid
+  menuKey String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, menuKey])
+  @@map("role_menus")
+}
+
+model RoleClub {
+  roleId String @db.Uuid
+  clubId String @db.Uuid
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, clubId])
+  @@map("role_clubs")
 }
 
 model Club {
   id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
+  userId    String?  @db.Uuid
   name      String
   leader    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User          @relation(fields: [userId], references: [id])
-  members Member[]
-  imports ImportBatch[]
+  wecomTeamId String?  @db.Uuid
+
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  wecomTeam     WecomTeam?     @relation(fields: [wecomTeamId], references: [id])
+  members       Member[]
+  imports       ImportBatch[]
+  activityClubs ActivityClub[]
+  roleClubs     RoleClub[]
 
   @@unique([userId, name])
   @@index([userId, createdAt])
@@ -78,7 +149,9 @@ model Member {
   dataUpdatedAt  DateTime
   createdAt      DateTime @default(now())
 
-  club Club @relation(fields: [clubId], references: [id])
+  club         Club              @relation(fields: [clubId], references: [id])
+  wecomBinding WecomBinding?
+  checkIns     ActivityCheckIn[]
 
   @@unique([clubId, playerName])
   @@index([clubId, rank])
@@ -88,13 +161,13 @@ model Member {
 model ImportBatch {
   id         String   @id @default(uuid()) @db.Uuid
   clubId     String   @db.Uuid
-  userId     String   @db.Uuid
+  userId     String?  @db.Uuid
   objectName String
   rowCount   Int
   createdAt  DateTime @default(now())
 
-  club Club @relation(fields: [clubId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  club Club  @relation(fields: [clubId], references: [id])
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([clubId, createdAt])
   @@map("import_batches")
@@ -243,4 +316,110 @@ model ExportJob {
 
   @@index([taskId, createdAt])
   @@map("export_jobs")
+}
+
+model WecomTeam {
+  id        String   @id @default(uuid()) @db.Uuid
+  corpId    String   @unique
+  agentId   String
+  name      String   @default("企业微信团队")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clubs      Club[]
+  activities Activity[]
+  bindings   WecomBinding[]
+
+  @@map("wecom_teams")
+}
+
+model Activity {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String?        @db.Uuid
+  wecomTeamId     String         @db.Uuid
+  title           String
+  startsAt        DateTime
+  remindAt        DateTime?
+  status          ActivityStatus @default(PUBLISHED)
+  publishedAt     DateTime       @default(now())
+  endedAt         DateTime?
+  remindClaimedAt DateTime?
+
+  user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  wecomTeam     WecomTeam              @relation(fields: [wecomTeamId], references: [id])
+  clubs         ActivityClub[]
+  recipients    ActivityRecipient[]
+  checkIns      ActivityCheckIn[]
+  notifications ActivityNotification[]
+
+  @@index([userId, publishedAt])
+  @@index([status, remindAt])
+  @@map("activities")
+}
+
+model ActivityClub {
+  activityId String @db.Uuid
+  clubId     String @db.Uuid
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  club     Club     @relation(fields: [clubId], references: [id])
+
+  @@id([activityId, clubId])
+  @@index([clubId])
+  @@map("activity_clubs")
+}
+
+model ActivityRecipient {
+  activityId String        @db.Uuid
+  kind       RecipientKind
+  wecomId    String
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, kind, wecomId])
+  @@map("activity_recipients")
+}
+
+model WecomBinding {
+  id          String   @id @default(uuid()) @db.Uuid
+  wecomTeamId String   @db.Uuid
+  wecomUserId String
+  memberId    String   @unique @db.Uuid
+  createdAt   DateTime @default(now())
+
+  wecomTeam WecomTeam @relation(fields: [wecomTeamId], references: [id])
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([wecomTeamId, wecomUserId])
+  @@map("wecom_bindings")
+}
+
+model ActivityCheckIn {
+  activityId  String   @db.Uuid
+  memberId    String   @db.Uuid
+  wecomUserId String
+  checkedAt   DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, memberId])
+  @@unique([activityId, wecomUserId])
+  @@map("activity_check_ins")
+}
+
+model ActivityNotification {
+  id             String              @id @default(uuid()) @db.Uuid
+  activityId     String              @db.Uuid
+  kind           NotificationKind
+  trigger        NotificationTrigger
+  status         NotificationStatus
+  recipientCount Int
+  errorMessage   String?
+  createdAt      DateTime            @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId, createdAt])
+  @@map("activity_notifications")
 }

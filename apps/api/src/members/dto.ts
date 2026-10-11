@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, ArrayUnique, IsArray, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 
 export const MEMBER_SORTS = [
   'rank',
@@ -10,6 +10,7 @@ export const MEMBER_SORTS = [
   'fashion',
   'weeklyActivity',
   'joinedText',
+  'notifyBound',
 ] as const;
 
 export type MemberSort = (typeof MEMBER_SORTS)[number];
@@ -42,7 +43,7 @@ export class WriteMemberDto {
   playerName!: string;
 
   @IsInt({ message: '排名必须是整数' })
-  @Min(1, { message: '排名必须大于 0' })
+  @Min(0, { message: '排名不能为负' })
   @Max(2147483647, { message: '排名超出范围' })
   rank!: number;
 
@@ -85,4 +86,13 @@ export class WriteMemberDto {
   @IsString()
   @MaxLength(40, { message: '入会时间过长' })
   joinedText?: string | null;
+}
+
+export class DeleteMembersDto {
+  @IsArray({ message: '请选择要删除的人员' })
+  @ArrayUnique({ message: '人员重复' })
+  @ArrayMinSize(1, { message: '请选择要删除的人员' })
+  @ArrayMaxSize(500, { message: '一次最多删除 500 人' })
+  @IsUUID('4', { each: true, message: '人员不正确' })
+  ids!: string[];
 }

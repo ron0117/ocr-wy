@@ -12,12 +12,12 @@ export class ClubsController {
 
   @Get()
   list(@CurrentUser() user: AuthUser) {
-    return this.clubs.list(user.id);
+    return this.clubs.list(user);
   }
 
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateClubDto) {
-    return this.clubs.create(user.id, dto);
+    return this.clubs.create(user, dto);
   }
 
   @Patch(':clubId')
@@ -26,7 +26,7 @@ export class ClubsController {
     @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
     @Body() dto: UpdateClubDto,
   ) {
-    return this.clubs.update(user.id, clubId, dto);
+    return this.clubs.update(user, clubId, dto);
   }
 
   @Delete(':clubId')
@@ -34,6 +34,6 @@ export class ClubsController {
     @CurrentUser() user: AuthUser,
     @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
   ) {
-    return this.clubs.remove(user.id, clubId);
+    return this.clubs.remove(user, clubId);
   }
 }

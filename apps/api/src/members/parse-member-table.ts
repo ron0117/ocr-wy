@@ -213,8 +213,56 @@ function joinedOf(cells: Cell[]): string | null {
   return optionalText(cells);
 }
 
+export function omitClippedTopLines(lines: OcrLine[]): OcrLine[] {
+  const cells = lines.flatMap((line) => {
+    const cell = toCell(line);
+    return cell ? [cell] : [];
+  });
+  const clustered = clusterRows(cells);
+  const header = clustered.find((row) => row.some((cell) => cell.text.includes('玩家名称')));
+  if (!header) return lines;
+  const headerCy = rowCenter(header);
+  const dropped = leadingClippedRows(clustered.filter((row) => rowCenter(row) > headerCy));
+  if (dropped.length === 0) return lines;
+  const bottom = Math.max(...dropped.flat().map((cell) => cell.bottom));
+  return lines.filter((line) => {
+    const cell = toCell(line);
+    if (!cell || cell.cy <= headerCy) return true;
+    return cell.y + 1 >= bottom;
+  });
+}
+
+function leadingClippedRows(dataRows: Cell[][]): Cell[][] {
+  if (dataRows.length < 3) return [];
+  const typicalSpan = median(dataRows.map(rowSpan));
+  const centers = dataRows.map(rowCenter);
+  const pitches = centers.slice(1).flatMap((center, index) => {
+    const pitch = center - centers[index];
+    return pitch > typicalSpan * 0.45 ? [pitch] : [];
+  });
+  const typicalPitch = median(pitches);
+  if (typicalSpan <= 0 || typicalPitch <= 0) return [];
+  const short = (row: Cell[]) => rowSpan(row) < typicalSpan * 0.72;
+  if (!short(dataRows[0])) return [];
+  const dropped = [dataRows[0]];
+  const gap = centers[1] - centers[0];
+  if (short(dataRows[1]) || gap < typicalPitch * 0.62) dropped.push(dataRows[1]);
+  return dropped;
+}
+
+function rowSpan(row: Cell[]): number {
+  return Math.max(...row.map((cell) => cell.bottom)) - Math.min(...row.map((cell) => cell.y));
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
 export function parseMemberTable(lines: OcrLine[]): ParsedMember[] {
-  const cells = omitGroupColumn(lines).flatMap((line) => {
+  const cells = omitClippedTopLines(omitGroupColumn(lines)).flatMap((line) => {
     const cell = toCell(line);
     return cell ? [cell] : [];
   });

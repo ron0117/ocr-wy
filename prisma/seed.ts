@@ -43,6 +43,7 @@ async function main() {
       email,
       name: '演示用户',
       passwordHash: await bcrypt.hash('Demo123456', 10),
+      disabled: true,
     },
   });
 

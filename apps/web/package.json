@@ -15,6 +15,7 @@
     "@ocr/shared-types": "workspace:*",
     "axios": "^1.8.4",
     "element-plus": "^2.14.7",
+    "exceljs": "^4.4.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },

@@ -1,0 +1,29 @@
+FROM node:20-bookworm-slim AS build
+
+ARG NPM_REGISTRY=
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN set -eux; \
+    if [ -n "$NPM_REGISTRY" ]; then export COREPACK_NPM_REGISTRY="$NPM_REGISTRY"; fi; \
+    corepack enable && corepack prepare pnpm@10.18.0 --activate; \
+    if [ -n "$NPM_REGISTRY" ]; then pnpm config set registry "$NPM_REGISTRY"; fi
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared-types/package.json packages/shared-types/package.json
+RUN pnpm install --frozen-lockfile
+COPY apps/web apps/web
+COPY packages/shared-types packages/shared-types
+RUN pnpm --filter @ocr/web build
+
+FROM nginx:1.27-alpine
+COPY deploy/nginx.http.conf /opt/nginx/http.conf
+COPY deploy/nginx.https.conf /opt/nginx/https.conf
+COPY deploy/web-entrypoint.sh /web-entrypoint.sh
+RUN chmod +x /web-entrypoint.sh
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 80 443
+ENTRYPOINT ["/web-entrypoint.sh"]
+

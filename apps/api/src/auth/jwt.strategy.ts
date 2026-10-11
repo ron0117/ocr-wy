@@ -3,11 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { AuthUser } from '@ocr/shared-types';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { toAuthUser } from '../access/present';
 import { PrismaService } from '../prisma/prisma.module';
 
 interface JwtPayload {
-  sub: string;
-  email: string;
+  sub?: string;
+  email?: string;
+  typ?: string;
 }
 
 @Injectable()
@@ -24,10 +26,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthUser> {
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
-    if (!user) {
+    if (!payload.sub || payload.typ === 'wecom') throw new UnauthorizedException('登录已失效');
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { role: { include: { menus: { select: { menuKey: true } } } } },
+    });
+    if (!user || user.disabled) {
       throw new UnauthorizedException('登录已失效');
     }
-    return { id: user.id, email: user.email, name: user.name };
+    return toAuthUser(user);
   }
 }

@@ -18,7 +18,7 @@ import type { AuthUser } from '@ocr/shared-types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadExceptionFilter } from '../common/upload-exception.filter';
-import { ListMembersQuery, WriteMemberDto } from './dto';
+import { DeleteMembersDto, ListMembersQuery, WriteMemberDto } from './dto';
 import { MembersService } from './members.service';
 
 @Controller()
@@ -38,17 +38,17 @@ export class MembersController {
     @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
     @UploadedFiles() files: Express.Multer.File[] | undefined,
   ) {
-    return this.members.importImages(user.id, clubId, files ?? []);
+    return this.members.importImages(user, clubId, files ?? []);
   }
 
   @Get('members')
   list(@CurrentUser() user: AuthUser, @Query() query: ListMembersQuery) {
-    return this.members.list(user.id, query);
+    return this.members.list(user, query);
   }
 
   @Post('members')
   create(@CurrentUser() user: AuthUser, @Body() dto: WriteMemberDto) {
-    return this.members.create(user.id, dto);
+    return this.members.create(user, dto);
   }
 
   @Patch('members/:id')
@@ -57,11 +57,21 @@ export class MembersController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: WriteMemberDto,
   ) {
-    return this.members.update(user.id, id, dto);
+    return this.members.update(user, id, dto);
+  }
+
+  @Post('members/batch-delete')
+  removeMany(@CurrentUser() user: AuthUser, @Body() dto: DeleteMembersDto) {
+    return this.members.removeMany(user, dto.ids);
+  }
+
+  @Delete('members/:id/wecom-binding')
+  unbind(@CurrentUser() user: AuthUser, @Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.members.unbind(user, id);
   }
 
   @Delete('members/:id')
   remove(@CurrentUser() user: AuthUser, @Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.members.remove(user.id, id);
+    return this.members.remove(user, id);
   }
 }

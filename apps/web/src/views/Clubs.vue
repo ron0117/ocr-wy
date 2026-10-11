@@ -9,6 +9,9 @@
     <el-card shadow="never">
       <el-table v-loading="loading" :data="clubs" empty-text="还没有俱乐部">
         <el-table-column prop="name" label="俱乐部名称" min-width="140" />
+        <el-table-column label="创建人" min-width="160">
+          <template #default="{ row }">{{ row.creatorEmail || '—' }}</template>
+        </el-table-column>
         <el-table-column label="会长" min-width="120">
           <template #default="{ row }">{{ row.leader || '—' }}</template>
         </el-table-column>

@@ -7,7 +7,9 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import type { AuthUser } from '@ocr/shared-types';
 import { Prisma } from '@prisma/client';
+import { AccessService } from '../access/access.service';
 import { ClubsService } from '../clubs/clubs.service';
 import { detectImageType, sanitizeFilename, type DetectedImage } from '../common/image';
 import { OcrClient } from '../ocr/ocr.client';
@@ -15,8 +17,8 @@ import { PrismaService } from '../prisma/prisma.module';
 import { StorageService } from '../storage/storage.service';
 import { ListMembersQuery, WriteMemberDto, type MemberSort } from './dto';
 import { MemberAiService } from './member-ai.service';
-import { omitGroupColumn, parseMemberTable, type OcrLine, type ParsedMember } from './parse-member-table';
-import { assignRanks, fillMissingFields, uniqueByName } from './structure-members';
+import { omitClippedTopLines, omitGroupColumn, parseMemberTable, type OcrLine, type ParsedMember } from './parse-member-table';
+import { assignRanks, fillMissingFields, orderByVertical, uniqueByName } from './structure-members';
 
 interface Change {
   direction: 'up' | 'down';
@@ -36,15 +38,16 @@ export class MembersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clubs: ClubsService,
+    private readonly access: AccessService,
     private readonly ocr: OcrClient,
     private readonly storage: StorageService,
     private readonly memberAi: MemberAiService,
   ) {}
 
-  async importImages(userId: string, clubId: string, files: Express.Multer.File[]) {
+  async importImages(user: AuthUser, clubId: string, files: Express.Multer.File[]) {
     if (files.length === 0) throw new BadRequestException('请上传图片文件');
     if (files.length > 20) throw new BadRequestException('一次最多上传 20 张图片');
-    await this.clubs.findOwned(userId, clubId);
+    await this.clubs.findOwned(user, clubId);
 
     const prepared: PreparedImage[] = [];
     for (const file of files) {
@@ -52,7 +55,7 @@ export class MembersService {
       const detected = await detectImageType(file.buffer);
       if (!detected) throw new BadRequestException(`${name} 不是 PNG、JPEG 或 WebP 图片`);
       const recognized = await this.ocr.recognize(file.buffer, name);
-      const lines = omitGroupColumn(recognized.lines);
+      const lines = omitClippedTopLines(omitGroupColumn(recognized.lines));
       if (lines.length === 0) throw new UnprocessableEntityException(`${name} 没有识别到文字`);
       const rows = uniqueByName(parseMemberTable(lines));
       prepared.push({ file, detected, lines, rows, objectName: '' });
@@ -63,7 +66,7 @@ export class MembersService {
     const stored: string[] = [];
     try {
       for (const item of prepared) {
-        const objectName = `imports/${userId}/${clubId}/${randomUUID()}.${item.detected.ext}`;
+        const objectName = `imports/${user.id}/${clubId}/${randomUUID()}.${item.detected.ext}`;
         await this.storage.upload(objectName, item.file.buffer, item.detected.mime);
         item.objectName = objectName;
         stored.push(objectName);
@@ -71,21 +74,19 @@ export class MembersService {
       return await this.prisma.$transaction(async (tx) => {
         const updatedAt = new Date();
         for (const row of merged) {
-          if (!fitsInt(row.rank)) continue;
           const existing = await tx.member.findUnique({
             where: { clubId_playerName: { clubId, playerName: row.playerName } },
           });
           if (!existing) {
             await tx.member.create({
-              data: { ...rowFields(row), clubId, dataUpdatedAt: updatedAt },
+              data: { ...importFields(row), rank: 0, clubId, dataUpdatedAt: updatedAt },
             });
             continue;
           }
           await tx.member.update({
             where: { id: existing.id },
             data: {
-              ...rowFields(row),
-              previousRank: existing.rank,
+              ...importFields(row),
               previousScore: existing.score,
               dataUpdatedAt: updatedAt,
             },
@@ -95,7 +96,7 @@ export class MembersService {
           await tx.importBatch.create({
             data: {
               clubId,
-              userId,
+              userId: user.id,
               objectName: item.objectName,
               rowCount: item.rows.length,
               createdAt: updatedAt,
@@ -112,7 +113,8 @@ export class MembersService {
 
   private async merge(images: PreparedImage[]): Promise<ParsedMember[]> {
     const localRows = uniqueByName(images.flatMap((image) => image.rows));
-    if (!this.memberAi.isEnabled()) return assignRanks(localRows);
+    const ranked = (rows: ParsedMember[]) => assignRanks(orderByVertical(rows, images.map((image) => image.lines)));
+    if (!this.memberAi.isEnabled()) return ranked(localRows);
     try {
       const filtered = await this.memberAi.filterAndDedupe(
         images.map((image) => ({
@@ -124,7 +126,7 @@ export class MembersService {
       if (filtered.length > 0) {
         const names = new Set(filtered.map((row) => row.playerName));
         const kept = localRows.filter((row) => names.has(row.playerName));
-        return assignRanks(kept.length > 0 ? fillMissingFields(kept, filtered) : filtered);
+        return ranked(kept.length > 0 ? fillMissingFields(kept, filtered) : filtered);
       }
       this.logger.warn('AI 没有筛出人员，改用坐标整理结果');
     } catch (error) {
@@ -132,33 +134,40 @@ export class MembersService {
       const message = error instanceof Error ? error.message : 'AI 整理失败';
       this.logger.warn(`AI 筛选去重失败，改用坐标整理：${message}`);
     }
-    return assignRanks(localRows);
+    return ranked(localRows);
   }
 
-  async list(userId: string, query: ListMembersQuery) {
-    if (query.clubId) await this.clubs.findOwned(userId, query.clubId);
-    const sort = query.sort ?? 'rank';
-    const order = query.order ?? 'asc';
+  async list(user: AuthUser, query: ListMembersQuery) {
+    if (query.clubId) await this.clubs.findOwned(user, query.clubId);
+    const sort = query.sort ?? 'score';
+    const order = query.order ?? (sort === 'score' ? 'desc' : 'asc');
     const keyword = query.keyword?.trim();
     const rows = await this.prisma.member.findMany({
       where: {
-        club: { userId },
+        club: this.access.clubWhere(user),
         ...(query.clubId ? { clubId: query.clubId } : {}),
         ...(keyword ? { playerName: { contains: keyword, mode: 'insensitive' } } : {}),
       },
-      include: { club: { select: { name: true } } },
-      orderBy: orderBy(sort, order),
+      include: { club: { select: { name: true } }, wecomBinding: { select: { id: true } } },
+      orderBy: sort === 'notifyBound' ? { rank: order } : orderBy(sort, order),
     });
-    return rows.map((row) => present(row));
+    const sorted =
+      sort === 'notifyBound'
+        ? [...rows].sort((left, right) => {
+            const delta = Number(Boolean(left.wecomBinding)) - Number(Boolean(right.wecomBinding));
+            return order === 'asc' ? delta : -delta;
+          })
+        : rows;
+    return sorted.map((row) => present(row));
   }
 
-  async create(userId: string, dto: WriteMemberDto) {
+  async create(user: AuthUser, dto: WriteMemberDto) {
     const fields = memberInput(dto);
-    await this.clubs.findOwned(userId, fields.clubId);
+    await this.clubs.findOwned(user, fields.clubId);
     try {
       const row = await this.prisma.member.create({
         data: { ...fields, dataUpdatedAt: new Date() },
-        include: { club: { select: { name: true } } },
+        include: { club: { select: { name: true } }, wecomBinding: { select: { id: true } } },
       });
       return present(row);
     } catch (error) {
@@ -166,10 +175,10 @@ export class MembersService {
     }
   }
 
-  async update(userId: string, memberId: string, dto: WriteMemberDto) {
-    const existing = await this.findOwned(userId, memberId);
+  async update(user: AuthUser, memberId: string, dto: WriteMemberDto) {
+    const existing = await this.findOwned(user, memberId);
     const fields = memberInput(dto);
-    await this.clubs.findOwned(userId, fields.clubId);
+    await this.clubs.findOwned(user, fields.clubId);
     try {
       const row = await this.prisma.member.update({
         where: { id: existing.id },
@@ -179,7 +188,7 @@ export class MembersService {
           previousScore: existing.score,
           dataUpdatedAt: new Date(),
         },
-        include: { club: { select: { name: true } } },
+        include: { club: { select: { name: true } }, wecomBinding: { select: { id: true } } },
       });
       return present(row);
     } catch (error) {
@@ -187,15 +196,36 @@ export class MembersService {
     }
   }
 
-  async remove(userId: string, memberId: string) {
-    const existing = await this.findOwned(userId, memberId);
+  async unbind(user: AuthUser, memberId: string) {
+    const existing = await this.findOwned(user, memberId);
+    const binding = await this.prisma.wecomBinding.findUnique({ where: { memberId: existing.id } });
+    if (!binding) return { ok: true, alreadyUnbound: true };
+    await this.prisma.wecomBinding.delete({ where: { memberId: existing.id } });
+    return { ok: true, alreadyUnbound: false };
+  }
+
+  async remove(user: AuthUser, memberId: string) {
+    const existing = await this.findOwned(user, memberId);
     await this.prisma.member.delete({ where: { id: existing.id } });
     return { ok: true };
   }
 
-  private async findOwned(userId: string, memberId: string) {
+  async removeMany(user: AuthUser, ids: string[]) {
+    const unique = [...new Set(ids)];
+    const owned = await this.prisma.member.findMany({
+      where: { id: { in: unique }, club: this.access.clubWhere(user) },
+      select: { id: true },
+    });
+    if (owned.length !== unique.length) throw new NotFoundException('有人员不存在');
+    const result = await this.prisma.member.deleteMany({
+      where: { id: { in: owned.map((row) => row.id) } },
+    });
+    return { deleted: result.count };
+  }
+
+  private async findOwned(user: AuthUser, memberId: string) {
     const member = await this.prisma.member.findFirst({
-      where: { id: memberId, club: { userId } },
+      where: { id: memberId, club: this.access.clubWhere(user) },
     });
     if (!member) throw new NotFoundException('人员不存在');
     return member;
@@ -245,6 +275,7 @@ function present(row: {
   previousRank: number | null;
   previousScore: number | null;
   club: { name: string };
+  wecomBinding: { id: string } | null;
 }) {
   return {
     id: row.id,
@@ -261,6 +292,7 @@ function present(row: {
     dataUpdatedAt: row.dataUpdatedAt.toISOString(),
     rankChange: change(row.previousRank, row.rank, false),
     scoreChange: change(row.previousScore, row.score, true),
+    notifyBound: Boolean(row.wecomBinding),
   };
 }
 
@@ -282,10 +314,9 @@ function fitInt(value: number | null): number | null {
   return fitsInt(value) ? value : null;
 }
 
-function rowFields(row: ParsedMember) {
+function importFields(row: ParsedMember) {
   return {
     playerName: row.playerName,
-    rank: row.rank,
     level: fitInt(row.level),
     path: row.path,
     score: fitInt(row.score),
@@ -314,6 +345,7 @@ function orderBy(sort: MemberSort, order: Prisma.SortOrder): Prisma.MemberOrderB
       return { weeklyActivity: nullable };
     case 'joinedText':
       return { joinedText: nullable };
+    case 'notifyBound':
     case 'rank':
       return { rank: order };
   }

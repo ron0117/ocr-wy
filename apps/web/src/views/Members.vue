@@ -18,6 +18,10 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="load">查询</el-button>
+          <el-button :icon="Download" :loading="exporting" :disabled="members.length === 0" @click="exportExcel">导出</el-button>
+          <el-button type="danger" :disabled="selected.length === 0" :loading="removing" @click="removeSelected">
+            删除{{ selected.length > 0 ? `（${selected.length}）` : '' }}
+          </el-button>
         </el-form-item>
       </el-form>
       <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" style="margin-bottom: 12px" />
@@ -25,10 +29,15 @@
         v-loading="loading"
         :data="members"
         empty-text="没有人员"
-        :default-sort="{ prop: 'rank', order: 'ascending' }"
+        row-key="id"
+        :default-sort="{ prop: 'score', order: 'descending' }"
+        @selection-change="onSelect"
         @sort-change="onSort"
       >
-        <el-table-column prop="rank" label="排名" width="90" sortable="custom" />
+        <el-table-column type="selection" width="48" />
+        <el-table-column label="排名" width="90">
+          <template #default="{ $index }">{{ $index + 1 }}</template>
+        </el-table-column>
         <el-table-column prop="playerName" label="玩家名称" min-width="100" sortable="custom" />
         <el-table-column prop="clubName" label="俱乐部名称" min-width="100" sortable="custom" />
         <el-table-column prop="level" label="等级" width="90" sortable="custom" />
@@ -44,9 +53,13 @@
         <el-table-column prop="fashion" label="风尚度" minWidth="100" sortable="custom" />
         <el-table-column prop="weeklyActivity" label="周活跃" width="110" sortable="custom" />
         <el-table-column prop="joinedText" label="入会时间" width="150" sortable="custom" />
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column prop="notifyBound" label="是否绑定通知" width="140" sortable="custom">
+          <template #default="{ row }">{{ row.notifyBound ? '已绑定' : '未绑定' }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row as MemberItem)">编辑</el-button>
+            <el-button v-if="row.notifyBound" link type="primary" @click="unbind(row as MemberItem)">解除绑定</el-button>
             <el-button link type="danger" @click="remove(row as MemberItem)">删除</el-button>
           </template>
         </el-table-column>
@@ -63,11 +76,6 @@
           <el-col :span="12">
             <el-form-item label="玩家名称" required>
               <el-input v-model="form.playerName" maxlength="40" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="排名" required>
-              <el-input-number v-model="form.rank" :min="1" :step="1" :precision="0" controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -113,13 +121,16 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessageBox } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
+import { Download, Plus } from '@element-plus/icons-vue';
+import { downloadMemberWorkbook } from './export-members';
 import {
   createMember,
   deleteMember,
+  deleteMembers,
   errorMessage,
   listClubs,
   listMembers,
+  unbindMember,
   updateMember,
   type ClubItem,
   type MemberInput,
@@ -130,10 +141,13 @@ const clubs = ref<ClubItem[]>([]);
 const members = ref<MemberItem[]>([]);
 const clubId = ref<string>();
 const keyword = ref('');
-const sort = ref('rank');
-const order = ref<'asc' | 'desc'>('asc');
+const sort = ref('score');
+const order = ref<'asc' | 'desc'>('desc');
+const selected = ref<MemberItem[]>([]);
 const loading = ref(false);
 const saving = ref(false);
+const removing = ref(false);
+const exporting = ref(false);
 const error = ref('');
 const formError = ref('');
 const editing = ref(false);
@@ -151,6 +165,7 @@ const form = reactive({
 });
 
 async function load() {
+  selected.value = [];
   loading.value = true;
   error.value = '';
   try {
@@ -167,9 +182,30 @@ async function load() {
   }
 }
 
+async function exportExcel() {
+  if (members.value.length === 0) return;
+  exporting.value = true;
+  error.value = '';
+  try {
+    const clubName = clubs.value.find((club) => club.id === clubId.value)?.name ?? '全部俱乐部';
+    await downloadMemberWorkbook(members.value, { clubName, keyword: keyword.value.trim() });
+  } catch (cause) {
+    error.value = errorMessage(cause, '导出失败');
+  } finally {
+    exporting.value = false;
+  }
+}
+
+function onSelect(rows: MemberItem[]) {
+  selected.value = rows;
+}
+
 function onSort(payload: { prop: string | null; order: 'ascending' | 'descending' | null }) {
-  sort.value = payload.order && payload.prop ? payload.prop : 'rank';
-  order.value = payload.order === 'descending' ? 'desc' : 'asc';
+  const nextSort = payload.order && payload.prop ? payload.prop : 'score';
+  const nextOrder: 'asc' | 'desc' = payload.order === 'ascending' ? 'asc' : 'desc';
+  if (nextSort === sort.value && nextOrder === order.value) return;
+  sort.value = nextSort;
+  order.value = nextOrder;
   void load();
 }
 
@@ -215,11 +251,10 @@ function openEdit(row: MemberItem) {
 function payload(): MemberInput | string {
   if (!form.clubId) return '请选择俱乐部';
   if (!form.playerName.trim()) return '请填写玩家名称';
-  if (form.rank === null || form.rank < 1) return '请填写排名';
   return {
     clubId: form.clubId,
     playerName: form.playerName.trim(),
-    rank: form.rank,
+    rank: form.rank !== null && form.rank >= 0 ? form.rank : 1,
     level: form.level,
     path: form.path.trim() || null,
     score: form.score,
@@ -246,6 +281,42 @@ async function submit() {
     formError.value = errorMessage(cause, '保存失败');
   } finally {
     saving.value = false;
+  }
+}
+
+async function unbind(row: MemberItem) {
+  try {
+    await ElMessageBox.confirm(`解除「${row.playerName}」的通知绑定？`, '解除绑定', { type: 'warning' });
+  } catch {
+    return;
+  }
+  error.value = '';
+  try {
+    await unbindMember(row.id);
+    await load();
+  } catch (cause) {
+    error.value = errorMessage(cause, '解除绑定失败');
+  }
+}
+
+async function removeSelected() {
+  const rows = selected.value;
+  if (rows.length === 0) return;
+  try {
+    await ElMessageBox.confirm(`删除选中的 ${rows.length} 名玩家？删除后不能恢复。`, '删除人员', { type: 'warning' });
+  } catch {
+    return;
+  }
+  removing.value = true;
+  error.value = '';
+  try {
+    await deleteMembers(rows.map((row) => row.id));
+    selected.value = [];
+    await load();
+  } catch (cause) {
+    error.value = errorMessage(cause, '删除失败');
+  } finally {
+    removing.value = false;
   }
 }
 

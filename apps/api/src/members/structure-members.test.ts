@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fillMissingFields, groundMemberRows, uniqueByName } from './structure-members';
-import type { ParsedMember } from './parse-member-table';
+import { assignRanks, fillMissingFields, groundMemberRows, orderByVertical, uniqueByName } from './structure-members';
+import type { OcrLine, ParsedMember } from './parse-member-table';
 
 const lines = [
   { text: '玩家名称' },
@@ -35,7 +35,7 @@ test('保留原文里出现过的人员字段', () => {
   );
   assert.equal(rows.length, 1);
   assert.equal(rows[0].playerName, '奶得加钱');
-  assert.equal(rows[0].rank, 64);
+  assert.equal(rows[0].rank, 1);
   assert.equal(rows[0].score, 134398);
   assert.equal(rows[0].joinedText, '26天');
 });
@@ -64,12 +64,37 @@ test('模型漏掉的风尚度和入会时间用坐标结果补回', () => {
   assert.equal(rows[0].score, 134398);
 });
 
+test('排名按画面从上到下编号，不采用图片里的名次', () => {
+  const upper = boxLine('无忧十三郎', 80);
+  const lower = boxLine('奶得加钱', 200);
+  const rows = assignRanks(orderByVertical([member('奶得加钱', 64), member('无忧十三郎', 1)], [[lower, upper]]));
+  assert.deepEqual(
+    rows.map((row) => [row.playerName, row.rank]),
+    [
+      ['无忧十三郎', 1],
+      ['奶得加钱', 2],
+    ],
+  );
+});
+
 test('同名人员只保留先出现的一条', () => {
   const first = member('奶得加钱', 64);
   const second = member('奶得加钱', 3);
   const rows = uniqueByName([first, second, member('无忧十三郎', 1)]);
   assert.deepEqual(rows.map((row) => row.rank), [64, 1]);
 });
+
+function boxLine(text: string, y: number): OcrLine {
+  return {
+    text,
+    box: [
+      [0, y],
+      [80, y],
+      [80, y + 20],
+      [0, y + 20],
+    ],
+  };
+}
 
 function member(playerName: string, rank: number): ParsedMember {
   return {
