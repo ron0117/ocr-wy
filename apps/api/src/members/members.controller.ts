@@ -26,6 +26,21 @@ import { MembersService } from './members.service';
 export class MembersController {
   constructor(private readonly members: MembersService) {}
 
+  @Post('clubs/:clubId/imports/preview')
+  @UseFilters(UploadExceptionFilter)
+  @UseInterceptors(
+    FilesInterceptor('files', 20, {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  previewImages(
+    @CurrentUser() user: AuthUser,
+    @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
+    @UploadedFiles() files: Express.Multer.File[] | undefined,
+  ) {
+    return this.members.previewImages(user, clubId, files ?? []);
+  }
+
   @Post('clubs/:clubId/imports')
   @UseFilters(UploadExceptionFilter)
   @UseInterceptors(
@@ -37,8 +52,9 @@ export class MembersController {
     @CurrentUser() user: AuthUser,
     @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
     @UploadedFiles() files: Express.Multer.File[] | undefined,
+    @Body('rows') rows?: string,
   ) {
-    return this.members.importImages(user, clubId, files ?? []);
+    return this.members.confirmImport(user, clubId, files ?? [], rows);
   }
 
   @Get('members')

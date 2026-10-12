@@ -156,9 +156,29 @@ export async function deleteClub(clubId: string) {
   await api.delete(`/clubs/${clubId}`);
 }
 
-export async function importMembers(clubId: string, files: File[]) {
+export interface ImportMemberRow {
+  playerName: string;
+  level: number | null;
+  path: string | null;
+  score: number | null;
+  fashion: number | null;
+  weeklyActivity: number | null;
+  joinedText: string | null;
+}
+
+export async function previewMembers(clubId: string, files: File[]) {
   const body = new FormData();
   for (const file of files) body.append('files', file);
+  const { data } = await api.post<{ rows: ImportMemberRow[] }>(`/clubs/${clubId}/imports/preview`, body, {
+    timeout: 600_000,
+  });
+  return data;
+}
+
+export async function confirmMembers(clubId: string, files: File[], rows: ImportMemberRow[]) {
+  const body = new FormData();
+  for (const file of files) body.append('files', file);
+  body.append('rows', JSON.stringify(rows));
   const { data } = await api.post<{ rowCount: number; imageCount: number; updatedAt: string }>(
     `/clubs/${clubId}/imports`,
     body,
@@ -533,4 +553,65 @@ export async function fetchResourceBlob(resourceId: string) {
     timeout: 60_000,
   });
   return response.data as Blob;
+}
+
+export interface AssistantDownload {
+  exportId: string;
+  fileName: string;
+  clubName: string;
+  memberCount: number;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface AssistantMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+  download: AssistantDownload | null;
+}
+
+export interface AssistantSessionView {
+  id: string;
+  processing: boolean;
+  messages: AssistantMessage[];
+}
+
+export async function currentAssistantSession() {
+  const { data } = await api.get<{ session: AssistantSessionView | null }>('/assistant/session');
+  return data.session;
+}
+
+export async function openAssistantSession() {
+  const { data } = await api.post<{ id: string }>('/assistant/sessions');
+  return data;
+}
+
+export async function sendAssistantMessage(sessionId: string, text: string, clientRequestId: string) {
+  const { data } = await api.post<{
+    sessionId: string;
+    processing: boolean;
+    basicMode: boolean;
+    message: AssistantMessage;
+  }>(`/assistant/sessions/${sessionId}/messages`, { text, clientRequestId }, { timeout: 180_000 });
+  return data;
+}
+
+export async function downloadAssistantExport(exportId: string, filename: string) {
+  const response = await api.get(`/assistant/exports/${exportId}`, {
+    responseType: 'blob',
+    timeout: 120_000,
+  });
+  const blob = response.data as Blob;
+  if (blob.type.includes('json') || blob.type.includes('text')) {
+    const parsed = JSON.parse(await blob.text()) as { message?: string };
+    throw new Error(parsed.message || '文件不可用');
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }

@@ -36,6 +36,7 @@
     <el-main>
       <RouterView />
     </el-main>
+    <XiaoyouPanel />
   </el-container>
 </template>
 
@@ -46,6 +47,7 @@ import { OfficeBuilding, Setting } from '@element-plus/icons-vue';
 import { me } from '../api/client';
 import { useAuth } from '../composables/auth';
 import BrandMark from './BrandMark.vue';
+import XiaoyouPanel from './XiaoyouPanel.vue';
 
 const auth = useAuth();
 const router = useRouter();

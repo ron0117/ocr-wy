@@ -58,6 +58,22 @@ enum NotificationStatus {
   FAILED
 }
 
+enum AssistantRole {
+  USER
+  ASSISTANT
+}
+
+enum AssistantToolStatus {
+  OK
+  ERROR
+  DENIED
+}
+
+enum AssistantExportStatus {
+  COMPLETED
+  FAILED
+}
+
 model User {
   id           String        @id @default(uuid()) @db.Uuid
   email        String        @unique
@@ -69,8 +85,9 @@ model User {
   templates    OcrTemplate[]
   clubs        Club[]
   imports      ImportBatch[]
-  activities   Activity[]
-  role         Role?         @relation(fields: [roleId], references: [id])
+  activities        Activity[]
+  assistantSessions AssistantSession[]
+  role              Role?              @relation(fields: [roleId], references: [id])
   createdAt    DateTime      @default(now())
 
   @@index([roleId])
@@ -422,4 +439,80 @@ model ActivityNotification {
 
   @@index([activityId, createdAt])
   @@map("activity_notifications")
+}
+
+model AssistantSession {
+  id                        String   @id @default(uuid()) @db.Uuid
+  userId                    String   @db.Uuid
+  activeClubId              String?  @db.Uuid
+  pending                   Json?
+  processingClientRequestId String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AssistantMessage[]
+  tools    AssistantToolCall[]
+  exports  AssistantExport[]
+
+  @@index([userId, updatedAt])
+  @@map("assistant_sessions")
+}
+
+model AssistantMessage {
+  id               String        @id @default(uuid()) @db.Uuid
+  sessionId        String        @db.Uuid
+  userId           String        @db.Uuid
+  role             AssistantRole
+  content          String
+  scene            String?
+  clientRequestId  String?
+  replyToMessageId String?       @db.Uuid
+  exportId         String?       @db.Uuid
+  createdAt        DateTime      @default(now())
+
+  session AssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, clientRequestId])
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
+  @@map("assistant_messages")
+}
+
+model AssistantToolCall {
+  id         String              @id @default(uuid()) @db.Uuid
+  sessionId  String              @db.Uuid
+  userId     String              @db.Uuid
+  tool       String
+  clubId     String?             @db.Uuid
+  status     AssistantToolStatus
+  errorCode  String?
+  durationMs Int
+  createdAt  DateTime            @default(now())
+
+  session AssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+  @@map("assistant_tool_calls")
+}
+
+model AssistantExport {
+  id          String                @id @default(uuid()) @db.Uuid
+  sessionId   String                @db.Uuid
+  userId      String                @db.Uuid
+  clubId      String                @db.Uuid
+  clubIds     String[]              @default([])
+  clubName    String
+  objectName  String
+  fileName    String
+  memberCount Int
+  status      AssistantExportStatus
+  expiresAt   DateTime
+  createdAt   DateTime              @default(now())
+
+  session AssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("assistant_exports")
 }

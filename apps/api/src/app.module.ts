@@ -11,6 +11,7 @@ import { HealthController } from './health.controller';
 import { MembersModule } from './members/members.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
+import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { StorageModule } from './storage/storage.module';
     ClubsModule,
     MembersModule,
     ActivitiesModule,
+    XiaoyouModule,
   ],
   controllers: [HealthController],
 })

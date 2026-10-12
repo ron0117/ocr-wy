@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
+  BadGatewayException,
   BadRequestException,
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -11,14 +11,12 @@ import type { AuthUser } from '@ocr/shared-types';
 import { Prisma } from '@prisma/client';
 import { AccessService } from '../access/access.service';
 import { ClubsService } from '../clubs/clubs.service';
-import { detectImageType, sanitizeFilename, type DetectedImage } from '../common/image';
-import { OcrClient } from '../ocr/ocr.client';
+import { detectImageType, sanitizeFilename, toVisionJpeg, type DetectedImage } from '../common/image';
 import { PrismaService } from '../prisma/prisma.module';
 import { StorageService } from '../storage/storage.service';
 import { ListMembersQuery, WriteMemberDto, type MemberSort } from './dto';
 import { MemberAiService } from './member-ai.service';
-import { omitClippedTopLines, omitGroupColumn, parseMemberTable, type OcrLine, type ParsedMember } from './parse-member-table';
-import { assignRanks, fillMissingFields, orderByVertical, uniqueByName } from './structure-members';
+import { cleanVisionRows, ConfirmRowsError, mergeVisionRows, parseConfirmRows, type VisionMemberRow } from './vision-members';
 
 interface Change {
   direction: 'up' | 'down';
@@ -33,47 +31,46 @@ function change(previous: number | null, current: number | null, higherIsBetter:
 
 @Injectable()
 export class MembersService {
-  private readonly logger = new Logger(MembersService.name);
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly clubs: ClubsService,
     private readonly access: AccessService,
-    private readonly ocr: OcrClient,
     private readonly storage: StorageService,
     private readonly memberAi: MemberAiService,
   ) {}
 
-  async importImages(user: AuthUser, clubId: string, files: Express.Multer.File[]) {
-    if (files.length === 0) throw new BadRequestException('请上传图片文件');
-    if (files.length > 20) throw new BadRequestException('一次最多上传 20 张图片');
-    await this.clubs.findOwned(user, clubId);
-
-    const prepared: PreparedImage[] = [];
-    for (const file of files) {
-      const name = sanitizeFilename(file.originalname || '图片');
-      const detected = await detectImageType(file.buffer);
-      if (!detected) throw new BadRequestException(`${name} 不是 PNG、JPEG 或 WebP 图片`);
-      const recognized = await this.ocr.recognize(file.buffer, name);
-      const lines = omitClippedTopLines(omitGroupColumn(recognized.lines));
-      if (lines.length === 0) throw new UnprocessableEntityException(`${name} 没有识别到文字`);
-      const rows = uniqueByName(parseMemberTable(lines));
-      prepared.push({ file, detected, lines, rows, objectName: '' });
+  async previewImages(user: AuthUser, clubId: string, files: Express.Multer.File[]) {
+    const prepared = await this.prepareFiles(user, clubId, files);
+    if (!this.memberAi.isEnabled()) throw new BadGatewayException('未配置 AI');
+    const jpegs: Buffer[] = [];
+    for (const item of prepared) {
+      try {
+        jpegs.push(await toVisionJpeg(item.file.buffer));
+      } catch {
+        throw new BadRequestException(`${item.name} 无法读取`);
+      }
     }
+    const payloads = await mapPool(jpegs, 4, (jpeg) => this.memberAi.readImage(jpeg));
+    const rows = mergeVisionRows(payloads.map((payload) => cleanVisionRows(payload)));
+    if (rows.length === 0) throw new UnprocessableEntityException('没有识别到人员');
+    return { rows };
+  }
 
-    const merged = await this.merge(prepared);
-    if (merged.length === 0) throw new UnprocessableEntityException('没有识别到人员行');
+  async confirmImport(user: AuthUser, clubId: string, files: Express.Multer.File[], rowsField: string | undefined) {
+    const prepared = await this.prepareFiles(user, clubId, files);
+    const rows = this.readConfirmField(rowsField);
     const stored: string[] = [];
     try {
+      const uploaded: string[] = [];
       for (const item of prepared) {
         const objectName = `imports/${user.id}/${clubId}/${randomUUID()}.${item.detected.ext}`;
         await this.storage.upload(objectName, item.file.buffer, item.detected.mime);
-        item.objectName = objectName;
+        uploaded.push(objectName);
         stored.push(objectName);
       }
       return await this.prisma.$transaction(async (tx) => {
         const updatedAt = new Date();
-        for (const row of merged) {
+        for (const row of rows) {
           const existing = await tx.member.findUnique({
             where: { clubId_playerName: { clubId, playerName: row.playerName } },
           });
@@ -92,18 +89,18 @@ export class MembersService {
             },
           });
         }
-        for (const item of prepared) {
+        for (const objectName of uploaded) {
           await tx.importBatch.create({
             data: {
               clubId,
               userId: user.id,
-              objectName: item.objectName,
-              rowCount: item.rows.length,
+              objectName,
+              rowCount: rows.length,
               createdAt: updatedAt,
             },
           });
         }
-        return { rowCount: merged.length, imageCount: prepared.length, updatedAt: updatedAt.toISOString() };
+        return { rowCount: rows.length, imageCount: prepared.length, updatedAt: updatedAt.toISOString() };
       });
     } catch (error) {
       await Promise.all(stored.map((objectName) => this.storage.remove(objectName)));
@@ -111,30 +108,34 @@ export class MembersService {
     }
   }
 
-  private async merge(images: PreparedImage[]): Promise<ParsedMember[]> {
-    const localRows = uniqueByName(images.flatMap((image) => image.rows));
-    const ranked = (rows: ParsedMember[]) => assignRanks(orderByVertical(rows, images.map((image) => image.lines)));
-    if (!this.memberAi.isEnabled()) return ranked(localRows);
-    try {
-      const filtered = await this.memberAi.filterAndDedupe(
-        images.map((image) => ({
-          name: sanitizeFilename(image.file.originalname || '图片'),
-          lines: image.lines,
-          candidates: image.rows,
-        })),
-      );
-      if (filtered.length > 0) {
-        const names = new Set(filtered.map((row) => row.playerName));
-        const kept = localRows.filter((row) => names.has(row.playerName));
-        return ranked(kept.length > 0 ? fillMissingFields(kept, filtered) : filtered);
-      }
-      this.logger.warn('AI 没有筛出人员，改用坐标整理结果');
-    } catch (error) {
-      if (localRows.length === 0) throw error;
-      const message = error instanceof Error ? error.message : 'AI 整理失败';
-      this.logger.warn(`AI 筛选去重失败，改用坐标整理：${message}`);
+  private async prepareFiles(user: AuthUser, clubId: string, files: Express.Multer.File[]) {
+    if (files.length === 0) throw new BadRequestException('请上传图片文件');
+    if (files.length > 20) throw new BadRequestException('一次最多上传 20 张图片');
+    await this.clubs.findOwned(user, clubId);
+    const prepared: PreparedFile[] = [];
+    for (const file of files) {
+      const name = sanitizeFilename(file.originalname || '图片');
+      const detected = await detectImageType(file.buffer);
+      if (!detected) throw new BadRequestException(`${name} 不是 PNG、JPEG 或 WebP 图片`);
+      prepared.push({ file, detected, name });
     }
-    return ranked(localRows);
+    return prepared;
+  }
+
+  private readConfirmField(rowsField: string | undefined): VisionMemberRow[] {
+    if (typeof rowsField !== 'string' || !rowsField.trim()) throw new BadRequestException('请提交校对结果');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rowsField);
+    } catch {
+      throw new BadRequestException('校对结果无法解析');
+    }
+    try {
+      return parseConfirmRows(parsed);
+    } catch (error) {
+      if (error instanceof ConfirmRowsError) throw new BadRequestException(error.message);
+      throw error;
+    }
   }
 
   async list(user: AuthUser, query: ListMembersQuery) {
@@ -296,34 +297,36 @@ function present(row: {
   };
 }
 
-interface PreparedImage {
+interface PreparedFile {
   file: Express.Multer.File;
   detected: DetectedImage;
-  lines: OcrLine[];
-  rows: ParsedMember[];
-  objectName: string;
+  name: string;
 }
 
-const INT32_MAX = 2_147_483_647;
-
-function fitsInt(value: number | null): value is number {
-  return value !== null && Number.isInteger(value) && value >= 0 && value <= INT32_MAX;
-}
-
-function fitInt(value: number | null): number | null {
-  return fitsInt(value) ? value : null;
-}
-
-function importFields(row: ParsedMember) {
+function importFields(row: VisionMemberRow) {
   return {
     playerName: row.playerName,
-    level: fitInt(row.level),
+    level: row.level,
     path: row.path,
-    score: fitInt(row.score),
-    fashion: fitInt(row.fashion),
-    weeklyActivity: fitInt(row.weeklyActivity),
+    score: row.score,
+    fashion: row.fashion,
+    weeklyActivity: row.weeklyActivity,
     joinedText: row.joinedText,
   };
+}
+
+async function mapPool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const run = async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => run()));
+  return results;
 }
 
 function orderBy(sort: MemberSort, order: Prisma.SortOrder): Prisma.MemberOrderByWithRelationInput {

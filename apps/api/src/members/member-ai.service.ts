@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import type { OcrLine, ParsedMember } from './parse-member-table';
 import { groundMemberRows, MEMBER_STRUCTURE_SYSTEM, parseMemberPayload, uniqueByName } from './structure-members';
+import { VISION_MEMBER_SYSTEM } from './vision-members';
 
 export interface MemberAiImage {
   name: string;
@@ -20,6 +21,18 @@ export class MemberAiService {
 
   isEnabled(): boolean {
     return Boolean(this.config.get<string>('AI_API_KEY')?.trim());
+  }
+
+  async readImage(jpeg: Buffer): Promise<unknown> {
+    const client = this.getClient();
+    const model = await this.resolveModel(client);
+    const dataUrl = `data:image/jpeg;base64,${jpeg.toString('base64')}`;
+    const content = await this.completeVision(client, model, dataUrl);
+    try {
+      return parseMemberPayload(content);
+    } catch {
+      throw new BadGatewayException('AI 返回的 JSON 格式无效');
+    }
   }
 
   async filterAndDedupe(images: MemberAiImage[]): Promise<ParsedMember[]> {
@@ -85,6 +98,46 @@ export class MemberAiService {
         throw this.toGatewayError(retryError);
       }
     }
+  }
+
+  private async completeVision(client: OpenAI, model: string, dataUrl: string): Promise<string> {
+    const userContent = [
+      { type: 'text' as const, text: '请用 json 返回。' },
+      { type: 'image_url' as const, image_url: { url: dataUrl } },
+    ];
+    try {
+      return await this.requestVision(client, model, userContent, true);
+    } catch (error) {
+      if (!isFormatRejected(error)) throw this.toGatewayError(error);
+      try {
+        return await this.requestVision(client, model, userContent, false);
+      } catch (retryError) {
+        throw this.toGatewayError(retryError);
+      }
+    }
+  }
+
+  private async requestVision(
+    client: OpenAI,
+    model: string,
+    userContent: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>,
+    jsonMode: boolean,
+  ): Promise<string> {
+    const completion = await client.chat.completions.create(
+      {
+        model,
+        temperature: 0,
+        messages: [
+          { role: 'system', content: VISION_MEMBER_SYSTEM },
+          { role: 'user', content: userContent },
+        ],
+        ...(jsonMode ? { response_format: { type: 'json_object' as const } } : {}),
+      },
+      { timeout: 90_000 },
+    );
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new BadGatewayException('AI 未返回整理结果');
+    return content;
   }
 
   private async request(client: OpenAI, model: string, userContent: string, jsonMode: boolean): Promise<string> {
