@@ -187,7 +187,9 @@ issue_tls_certificate() {
   done
 }
 
-ensure_certbot_env
+# 备案完成前不申请证书，也不要把 WEB_ORIGIN 改成 https。
+# 备案并解析域名后，取消下面两行注释。
+# ensure_certbot_env
 
 if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
   firewall-cmd --permanent --add-service=http
@@ -202,7 +204,8 @@ if ! docker compose --env-file .env.production -f docker-compose.prod.yml up -d 
   docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail 150 api >&2 || true
   exit 1
 fi
-issue_tls_certificate
+# 备案完成前不启用 HTTPS。备案后取消下一行注释。
+# issue_tls_certificate
 docker compose --env-file .env.production -f docker-compose.prod.yml ps
 
 origin="$(awk -F= '$1 == "WEB_ORIGIN" {sub(/^WEB_ORIGIN=/, ""); print}' .env.production)"
