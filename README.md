@@ -6,7 +6,7 @@ AI 只负责把 OCR 原文整理成结构化数据，不能补造价格或数量
 
 ## 本地运行
 
-需要 Node.js 20、pnpm，以及 Docker 里的 PostgreSQL。PaddleOCR 单独跑在 Python 服务中。
+需要 Node.js 20、pnpm，以及 Docker 里的 PostgreSQL。
 
 ```powershell
 docker compose up -d postgres
@@ -18,20 +18,12 @@ pnpm dev:api
 pnpm dev:web
 ```
 
-打开 http://localhost:5173 。演示账号：
+打开 http://localhost:5777 。演示账号：
 
 - 邮箱 `demo@example.com`
 - 密码 `Demo123456`
 
 未配置 `AI_API_KEY` 时，整理走本地规则：有表头时按列提取，单行文本只按“名称 单价 数量”解读，对不上原文的价格和数量会被清空。
-
-## OCR 服务
-
-```powershell
-pnpm dev:ocr
-```
-
-服务使用 RapidOCR 的中文模型，首次识别会下载模型。服务监听本机 8000 端口，可选 `OCR_AUTH_TOKEN`。
 
 ## 存储
 

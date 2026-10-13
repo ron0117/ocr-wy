@@ -70,23 +70,43 @@ export class MembersService {
       }
       return await this.prisma.$transaction(async (tx) => {
         const updatedAt = new Date();
+        const current = await tx.member.findMany({ where: { clubId } });
+        const exact = new Map(current.map((member) => [member.playerName, member]));
+        const folded = new Map<string, typeof current>();
+        for (const member of current) {
+          const key = foldPlayerName(member.playerName);
+          const bucket = folded.get(key) ?? [];
+          bucket.push(member);
+          folded.set(key, bucket);
+        }
+        const updates: { id: string; row: VisionMemberRow; previousScore: number | null }[] = [];
+        const creates: VisionMemberRow[] = [];
         for (const row of rows) {
-          const existing = await tx.member.findUnique({
-            where: { clubId_playerName: { clubId, playerName: row.playerName } },
-          });
+          const existing = matchMember(row.playerName, exact, folded);
           if (!existing) {
-            await tx.member.create({
-              data: { ...importFields(row), rank: 0, clubId, dataUpdatedAt: updatedAt },
-            });
+            creates.push(row);
             continue;
           }
+          updates.push({ id: existing.id, row, previousScore: existing.score });
+          untrackMember(existing, exact, folded);
+        }
+        const keepIds = updates.map((item) => item.id);
+        await tx.member.deleteMany({
+          where: keepIds.length === 0 ? { clubId } : { clubId, id: { notIn: keepIds } },
+        });
+        for (const item of updates) {
           await tx.member.update({
-            where: { id: existing.id },
+            where: { id: item.id },
             data: {
-              ...importFields(row),
-              previousScore: existing.score,
+              ...importFields(item.row),
+              previousScore: item.previousScore,
               dataUpdatedAt: updatedAt,
             },
+          });
+        }
+        for (const row of creates) {
+          await tx.member.create({
+            data: { ...importFields(row), rank: 0, clubId, dataUpdatedAt: updatedAt },
           });
         }
         for (const objectName of uploaded) {
@@ -313,6 +333,33 @@ function importFields(row: VisionMemberRow) {
     weeklyActivity: row.weeklyActivity,
     joinedText: row.joinedText,
   };
+}
+
+function foldPlayerName(name: string) {
+  return name.trim().replace(/[\s\u3000]+/g, '').toLowerCase();
+}
+
+function matchMember<T extends { id: string; playerName: string }>(
+  playerName: string,
+  exact: Map<string, T>,
+  folded: Map<string, T[]>,
+) {
+  const direct = exact.get(playerName);
+  if (direct) return direct;
+  const bucket = folded.get(foldPlayerName(playerName)) ?? [];
+  return bucket.length === 1 ? bucket[0] : undefined;
+}
+
+function untrackMember<T extends { id: string; playerName: string }>(
+  member: T,
+  exact: Map<string, T>,
+  folded: Map<string, T[]>,
+) {
+  exact.delete(member.playerName);
+  const key = foldPlayerName(member.playerName);
+  const bucket = (folded.get(key) ?? []).filter((item) => item.id !== member.id);
+  if (bucket.length === 0) folded.delete(key);
+  else folded.set(key, bucket);
 }
 
 async function mapPool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {

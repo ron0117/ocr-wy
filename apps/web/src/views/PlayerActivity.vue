@@ -124,7 +124,7 @@ onMounted(async () => {
 .player-page {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px 40px;
+  padding: max(24px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
 }
 .player-page h1 {
   margin: 0 0 8px;

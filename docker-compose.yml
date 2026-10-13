@@ -15,11 +15,5 @@ services:
       timeout: 5s
       retries: 20
 
-  ocr:
-    profiles: ["ocr"]
-    build: ./services/ocr-python
-    ports:
-      - "8000:8000"
-
 volumes:
   ocr_pg:

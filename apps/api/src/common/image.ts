@@ -49,6 +49,17 @@ export async function toVisionJpeg(buffer: Buffer): Promise<Buffer> {
   const meta = await sharp(buffer, { limitInputPixels: 40_000_000, failOn: 'error' }).metadata();
   const width = meta.width ?? 0;
   const height = meta.height ?? 0;
+  const needsRotate = typeof meta.orientation === 'number' && meta.orientation > 1;
+  if (
+    meta.format === 'jpeg' &&
+    !needsRotate &&
+    width > 0 &&
+    height > 0 &&
+    width <= VISION_EDGE &&
+    height <= VISION_EDGE
+  ) {
+    return buffer;
+  }
   let pipeline = sharp(buffer, { limitInputPixels: 40_000_000, failOn: 'error' }).rotate();
   if (width > VISION_EDGE || height > VISION_EDGE) {
     pipeline = pipeline.resize({
@@ -58,7 +69,7 @@ export async function toVisionJpeg(buffer: Buffer): Promise<Buffer> {
       withoutEnlargement: true,
     });
   }
-  return pipeline.jpeg({ quality: 80 }).toBuffer();
+  return pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
 }
 
 export function sanitizeFilename(name: string): string {

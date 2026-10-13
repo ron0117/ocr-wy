@@ -1,15 +1,7 @@
 import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import type { OcrLine, ParsedMember } from './parse-member-table';
-import { groundMemberRows, MEMBER_STRUCTURE_SYSTEM, parseMemberPayload, uniqueByName } from './structure-members';
 import { VISION_MEMBER_SYSTEM } from './vision-members';
-
-export interface MemberAiImage {
-  name: string;
-  lines: OcrLine[];
-  candidates: ParsedMember[];
-}
 
 @Injectable()
 export class MemberAiService {
@@ -33,28 +25,6 @@ export class MemberAiService {
     } catch {
       throw new BadGatewayException('AI 返回的 JSON 格式无效');
     }
-  }
-
-  async filterAndDedupe(images: MemberAiImage[]): Promise<ParsedMember[]> {
-    const client = this.getClient();
-    const model = await this.resolveModel(client);
-    const payload = {
-      images: images.map((image) => ({
-        name: image.name,
-        lines: image.lines.slice(0, 200).map((line) => ({ text: line.text, box: line.box })),
-        candidates: image.candidates,
-      })),
-    };
-    // 网关启用 json_object 时只检查用户消息，系统提示里的 JSON 不算。
-    const content = await this.complete(client, model, `请用 json 返回。\n${JSON.stringify(payload)}`);
-    let parsed: unknown;
-    try {
-      parsed = parseMemberPayload(content);
-    } catch {
-      throw new BadGatewayException('AI 返回的 JSON 格式无效');
-    }
-    const lines = images.flatMap((image) => image.lines);
-    return uniqueByName(groundMemberRows(parsed, lines));
   }
 
   private getClient(): OpenAI {
@@ -84,19 +54,6 @@ export class MemberAiService {
       return model;
     } catch (error) {
       throw this.toGatewayError(error);
-    }
-  }
-
-  private async complete(client: OpenAI, model: string, userContent: string): Promise<string> {
-    try {
-      return await this.request(client, model, userContent, true);
-    } catch (error) {
-      if (!isFormatRejected(error)) throw this.toGatewayError(error);
-      try {
-        return await this.request(client, model, userContent, false);
-      } catch (retryError) {
-        throw this.toGatewayError(retryError);
-      }
     }
   }
 
@@ -140,27 +97,17 @@ export class MemberAiService {
     return content;
   }
 
-  private async request(client: OpenAI, model: string, userContent: string, jsonMode: boolean): Promise<string> {
-    const completion = await client.chat.completions.create({
-      model,
-      temperature: 0,
-      messages: [
-        { role: 'system', content: MEMBER_STRUCTURE_SYSTEM },
-        { role: 'user', content: userContent },
-      ],
-      ...(jsonMode ? { response_format: { type: 'json_object' as const } } : {}),
-    });
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new BadGatewayException('AI 未返回整理结果');
-    return content;
-  }
-
   private toGatewayError(error: unknown): BadGatewayException {
     if (error instanceof BadGatewayException) return error;
     const message = error instanceof Error ? error.message : 'AI 整理失败';
     this.logger.error(message);
     return new BadGatewayException(message || 'AI 整理失败');
   }
+}
+
+function parseMemberPayload(content: string): unknown {
+  const trimmed = content.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  return JSON.parse(trimmed);
 }
 
 function normalizeBaseUrl(value: string | undefined): string {

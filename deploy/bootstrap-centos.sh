@@ -102,7 +102,6 @@ create_env() {
   sed \
     -e "s|POSTGRES_PASSWORD=change-me|POSTGRES_PASSWORD=$(random_hex 24)|" \
     -e "s|JWT_SECRET=change-me|JWT_SECRET=$(random_hex 48)|" \
-    -e "s|OCR_AUTH_TOKEN=change-me|OCR_AUTH_TOKEN=$(random_hex 32)|" \
     -e "s|WEB_ORIGIN=http://127.0.0.1|WEB_ORIGIN=${origin}|" \
     deploy/.env.production.example > .env.production
   echo "已生成 .env.production；如需域名、HTTPS 或 AI，请部署后编辑该文件再重跑脚本。"

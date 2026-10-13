@@ -24,7 +24,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
   app.enableCors({
-    origin: (process.env.WEB_ORIGIN ?? 'http://localhost:5173')
+    origin: (process.env.WEB_ORIGIN ?? 'http://localhost:5777')
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean),

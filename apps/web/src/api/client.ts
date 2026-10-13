@@ -448,11 +448,6 @@ export async function uploadImage(taskId: string, file: File) {
   return data;
 }
 
-export async function recognize(taskId: string, force = false) {
-  const { data } = await api.post<TaskDetail>(`/tasks/${taskId}/recognize`, { force }, { timeout: 120_000 });
-  return data;
-}
-
 export async function listRecords(taskId: string) {
   const { data } = await api.get<ProductRow[]>(`/tasks/${taskId}/records`);
   return data;
@@ -595,6 +590,57 @@ export async function sendAssistantMessage(sessionId: string, text: string, clie
     basicMode: boolean;
     message: AssistantMessage;
   }>(`/assistant/sessions/${sessionId}/messages`, { text, clientRequestId }, { timeout: 180_000 });
+  return data;
+}
+
+export interface PublicClub {
+  id: string;
+  name: string;
+}
+
+export interface ApplicationItem {
+  id: string;
+  gameName: string;
+  score: number;
+  uid: string;
+  clubName: string;
+  createdAt: string;
+  read: boolean;
+  decision: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface ApplicationDetail extends ApplicationItem {
+  reason: string;
+}
+
+export async function listApplyClubs() {
+  const { data } = await api.get<PublicClub[]>('/apply/clubs');
+  return data;
+}
+
+export async function submitApplication(body: {
+  gameName: string;
+  score: number;
+  uid: string;
+  clubId: string;
+  reason: string;
+}) {
+  const { data } = await api.post<{ ok: true }>('/apply', body);
+  return data;
+}
+
+export async function listApplications(read: 'unread' | 'read') {
+  const { data } = await api.get<ApplicationItem[]>('/applications', { params: { read } });
+  return data;
+}
+
+export async function applicationDetail(id: string) {
+  const { data } = await api.get<ApplicationDetail>(`/applications/${id}`);
+  return data;
+}
+
+export async function decideApplication(id: string, decision: 'APPROVED' | 'REJECTED') {
+  const { data } = await api.patch<ApplicationItem>(`/applications/${id}`, { decision });
   return data;
 }
 

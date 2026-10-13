@@ -1,0 +1,8 @@
+无忧管理人员系统已经可以使用了，现在有通过截图导入人员列表数据（导入完需要确认一下），接下来会有活动人均通知。
+临时访问地址： http://124.222.204.107/（域名正在公安备案中~）
+太子叔 账号 tzs@wuyou.com 密码 qwer1234
+十三郎 账号 ssl@wuyou.com 密码 qwer1234
+定疆 账号 dj@wuyou.com 密码qwer1234
+九九 账号 jiujiu@wuyou.com 密码qwer1234
+元傀 账号yk@wuyou.com 密码qwer1234
+支持移动端登陆哦

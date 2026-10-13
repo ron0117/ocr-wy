@@ -77,6 +77,11 @@ export const MENU_CATALOG = [
     ],
   },
   {
+    key: 'recruitment',
+    title: '招聘管理',
+    children: [{ key: 'applications', title: '申请列表', path: '/applications' }],
+  },
+  {
     key: 'system',
     title: '系统管理',
     children: [

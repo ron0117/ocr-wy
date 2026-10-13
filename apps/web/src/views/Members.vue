@@ -7,16 +7,16 @@
       <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
     </div>
     <el-card shadow="never">
-      <el-form inline @submit.prevent="load">
+      <el-form class="filter-form" inline @submit.prevent="load">
         <el-form-item label="俱乐部">
-          <el-select v-model="clubId" clearable placeholder="全部俱乐部" style="width: 200px">
+          <el-select v-model="clubId" class="filter-control" clearable placeholder="全部俱乐部">
             <el-option v-for="club in clubs" :key="club.id" :label="club.name" :value="club.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="游戏名称">
-          <el-input v-model="keyword" clearable placeholder="玩家名称" style="width: 200px" @keyup.enter="load" />
+          <el-input v-model="keyword" class="filter-control" clearable placeholder="玩家名称" @keyup.enter="load" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-actions">
           <el-button type="primary" :loading="loading" @click="load">查询</el-button>
           <el-button :icon="Download" :loading="exporting" :disabled="members.length === 0" @click="exportExcel">导出</el-button>
           <el-button type="danger" :disabled="selected.length === 0" :loading="removing" @click="removeSelected">
@@ -56,11 +56,13 @@
         <el-table-column prop="notifyBound" label="是否绑定通知" width="140" sortable="custom">
           <template #default="{ row }">{{ row.notifyBound ? '已绑定' : '未绑定' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" :width="narrow ? 112 : 200" :fixed="narrow ? false : 'right'">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openEdit(row as MemberItem)">编辑</el-button>
-            <el-button v-if="row.notifyBound" link type="primary" @click="unbind(row as MemberItem)">解除绑定</el-button>
-            <el-button link type="danger" @click="remove(row as MemberItem)">删除</el-button>
+            <div class="cell-ops">
+              <el-button link type="primary" @click="openEdit(row as MemberItem)">编辑</el-button>
+              <el-button v-if="row.notifyBound" link type="primary" @click="unbind(row as MemberItem)">解除绑定</el-button>
+              <el-button link type="danger" @click="remove(row as MemberItem)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -120,6 +122,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
+import { useNarrow } from '../composables/viewport';
 import { ElMessageBox } from 'element-plus';
 import { Download, Plus } from '@element-plus/icons-vue';
 import { downloadMemberWorkbook } from './export-members';
@@ -137,6 +140,7 @@ import {
   type MemberItem,
 } from '../api/client';
 
+const narrow = useNarrow();
 const clubs = ref<ClubItem[]>([]);
 const members = ref<MemberItem[]>([]);
 const clubId = ref<string>();

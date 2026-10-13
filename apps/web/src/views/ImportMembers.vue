@@ -14,28 +14,30 @@
       </el-form-item>
     </el-form>
     <el-upload
+      class="import-upload"
       v-model:file-list="fileList"
       drag
       multiple
       :auto-upload="false"
       :limit="20"
-      accept="image/png,image/jpeg,image/webp"
+      accept="image/*"
       :disabled="!clubId || recognizing"
       :on-exceed="onExceed"
+      :on-change="onFileChange"
     >
       <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-      <div class="el-upload__text">拖入一张或多张截图，或点击选择</div>
+      <div class="el-upload__text">点击选择本地图片，或把截图拖到这里</div>
       <template #tip>
-        <div class="el-upload__tip">支持 PNG、JPEG、WebP，一次最多 20 张，单张不超过 10MB。未选择俱乐部时不能上传。</div>
+        <div class="el-upload__tip">支持 PNG、JPEG、WebP，一次最多 20 张。选择后会自动压缩再上传，清晰度与识别所用画面一致。未选择俱乐部时不能上传。</div>
       </template>
     </el-upload>
-    <el-button type="primary" style="margin-top: 16px" :disabled="!clubId || fileList.length === 0" :loading="recognizing" @click="recognize">
+    <el-button type="primary" style="margin-top: 16px" :disabled="!clubId || fileList.length === 0 || compressing" :loading="recognizing" @click="recognize">
       开始识别
     </el-button>
   </el-card>
   <el-card v-else shadow="never">
     <p style="margin-top: 0">俱乐部：{{ clubName }}</p>
-    <el-alert title="留空的格子在确认后会清空该玩家库里的旧值。" type="info" show-icon :closable="false" style="margin-bottom: 12px" />
+    <el-alert title="确认后，这个俱乐部的人员会换成本次名单。同名玩家就地更新，名单里没有的人会被移除。" type="info" show-icon :closable="false" style="margin-bottom: 12px" />
     <el-table :data="drafts" row-key="key" empty-text="没有人员">
       <el-table-column label="玩家名称" min-width="140">
         <template #default="{ row }">
@@ -52,7 +54,7 @@
           <el-input v-model="row.path" maxlength="40" />
         </template>
       </el-table-column>
-      <el-table-column label="非凡评分" width="150">
+      <el-table-column label="非凡评分" width="200">
         <template #default="{ row }">
           <el-input-number v-model="row.score" :min="0" :step="1" :precision="0" controls-position="right" :value-on-clear="null" style="width: 100%" />
         </template>
@@ -72,13 +74,13 @@
           <el-input v-model="row.joinedText" maxlength="40" placeholder="如 26天" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="80" fixed="right">
+      <el-table-column label="操作" :width="narrow ? 72 : 80" :fixed="narrow ? false : 'right'">
         <template #default="{ $index }">
           <el-button link type="danger" @click="drafts.splice($index, 1)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-    <div style="margin-top: 16px">
+    <div class="form-actions" style="margin-top: 16px">
       <el-button :disabled="confirming" @click="cancelReview">取消</el-button>
       <el-button type="primary" :loading="confirming" @click="confirm">确认导入</el-button>
     </div>
@@ -86,11 +88,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
+import { useNarrow } from '../composables/viewport';
 import { ElMessage } from 'element-plus';
-import type { UploadUserFile } from 'element-plus';
+import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
 import { confirmMembers, errorMessage, listClubs, previewMembers, type ClubItem, type ImportMemberRow } from '../api/client';
+import { compressForVision } from './compress-image';
 
 interface DraftRow {
   key: number;
@@ -103,15 +107,18 @@ interface DraftRow {
   joinedText: string;
 }
 
+const narrow = useNarrow();
 const clubs = ref<ClubItem[]>([]);
 const clubId = ref<string>();
 const fileList = ref<UploadUserFile[]>([]);
 const drafts = ref<DraftRow[]>([]);
 const loading = ref(true);
+const compressing = ref(false);
 const recognizing = ref(false);
 const confirming = ref(false);
 const reviewing = ref(false);
 let draftKey = 0;
+let compressJobs = 0;
 
 const clubName = computed(() => clubs.value.find((club) => club.id === clubId.value)?.name ?? '');
 
@@ -129,10 +136,49 @@ function onExceed() {
   ElMessage.error('一次最多上传 20 张图片');
 }
 
+function allowedImage(file: File) {
+  const type = file.type.toLowerCase();
+  if (type === 'image/png' || type === 'image/jpeg' || type === 'image/jpg' || type === 'image/webp') return true;
+  return !type && /\.(png|jpe?g|webp)$/i.test(file.name);
+}
+
+function onFileChange(uploadFile: UploadFile) {
+  const raw = uploadFile.raw;
+  if (!(raw instanceof File)) return;
+  if (!allowedImage(raw)) {
+    void nextTick(() => {
+      fileList.value = fileList.value.filter((item) => item.uid !== uploadFile.uid);
+    });
+    ElMessage.error('请选择 PNG、JPEG 或 WebP 图片');
+    return;
+  }
+  compressJobs += 1;
+  compressing.value = true;
+  void compressForVision(raw)
+    .then((compressed) => {
+      const item = fileList.value.find((row) => row.uid === uploadFile.uid);
+      if (!item) return;
+      const next = compressed as UploadRawFile;
+      next.uid = uploadFile.uid;
+      item.raw = next;
+      item.name = next.name;
+      item.size = next.size;
+    })
+    .catch(() => {
+      fileList.value = fileList.value.filter((item) => item.uid !== uploadFile.uid);
+      ElMessage.error(`${raw.name} 无法读取`);
+    })
+    .finally(() => {
+      compressJobs = Math.max(0, compressJobs - 1);
+      compressing.value = compressJobs > 0;
+    });
+}
+
 function selectedFiles() {
   const files = fileList.value.flatMap((item) => (item.raw instanceof File ? [item.raw] : []));
   const oversized = files.find((file) => file.size > 10 * 1024 * 1024);
-  return { files, oversized };
+  const invalid = files.find((file) => !allowedImage(file));
+  return { files, oversized, invalid };
 }
 
 async function recognize() {
@@ -140,13 +186,21 @@ async function recognize() {
     ElMessage.error('请先选择俱乐部');
     return;
   }
-  const { files, oversized } = selectedFiles();
+  const { files, oversized, invalid } = selectedFiles();
+  if (compressing.value) {
+    ElMessage.error('图片还在压缩，请稍候');
+    return;
+  }
   if (files.length === 0) {
     ElMessage.error('请上传图片文件');
     return;
   }
+  if (invalid) {
+    ElMessage.error('请选择 PNG、JPEG 或 WebP 图片');
+    return;
+  }
   if (oversized) {
-    ElMessage.error(`${oversized.name} 不能超过 10MB`);
+    ElMessage.error(`${oversized.name} 压缩后仍超过 10MB`);
     return;
   }
   recognizing.value = true;
@@ -214,13 +268,21 @@ async function confirm() {
   }
   const rows = confirmPayload();
   if (!rows) return;
-  const { files, oversized } = selectedFiles();
+  const { files, oversized, invalid } = selectedFiles();
+  if (compressing.value) {
+    ElMessage.error('图片还在压缩，请稍候');
+    return;
+  }
   if (files.length === 0) {
     ElMessage.error('请上传图片文件');
     return;
   }
+  if (invalid) {
+    ElMessage.error('请选择 PNG、JPEG 或 WebP 图片');
+    return;
+  }
   if (oversized) {
-    ElMessage.error(`${oversized.name} 不能超过 10MB`);
+    ElMessage.error(`${oversized.name} 压缩后仍超过 10MB`);
     return;
   }
   confirming.value = true;

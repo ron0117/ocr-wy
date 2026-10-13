@@ -22,12 +22,14 @@
       <el-table-column label="通知" min-width="140">
         <template #default="{ row }">{{ noticeText(row as ActivityItem) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column label="操作" :width="narrow ? 112 : 280" :fixed="narrow ? false : 'right'">
         <template #default="{ row }">
-          <el-button link type="primary" @click="router.push(`/activities/${(row as ActivityItem).id}`)">签到情况</el-button>
-          <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="primary" @click="resend(row as ActivityItem, 'publish')">重发卡片</el-button>
-          <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="primary" @click="resend(row as ActivityItem, 'remind')">重发提醒</el-button>
-          <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="danger" @click="finish(row as ActivityItem)">结束</el-button>
+          <div class="cell-ops">
+            <el-button link type="primary" @click="router.push(`/activities/${(row as ActivityItem).id}`)">签到情况</el-button>
+            <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="primary" @click="resend(row as ActivityItem, 'publish')">重发卡片</el-button>
+            <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="primary" @click="resend(row as ActivityItem, 'remind')">重发提醒</el-button>
+            <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="danger" @click="finish(row as ActivityItem)">结束</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -75,6 +77,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
+import { useNarrow } from '../composables/viewport';
 import { useRouter } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
@@ -92,6 +95,7 @@ import {
 } from '../api/client';
 
 const router = useRouter();
+const narrow = useNarrow();
 const clubs = ref<ClubItem[]>([]);
 const activities = ref<ActivityItem[]>([]);
 const audience = ref<WecomAudience>({ parties: [], tags: [], users: [] });

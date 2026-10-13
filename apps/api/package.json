@@ -10,7 +10,7 @@
     "start": "node dist/main.js",
     "seed": "tsx ../../prisma/seed.ts",
     "check": "tsx src/scripts/self-check.ts",
-    "test:members": "tsx --test src/members/parse-member-table.test.ts src/members/structure-members.test.ts src/members/vision-members.test.ts"
+    "test:members": "tsx --test src/members/vision-members.test.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",

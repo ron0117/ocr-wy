@@ -26,7 +26,7 @@
       <el-form-item label="名称" required>
         <el-input v-model="name" maxlength="40" />
       </el-form-item>
-      <el-form-item label="菜单">
+      <el-form-item label="菜单" class="menu-field">
         <div v-for="group in MENU_CATALOG" :key="group.key" class="menu-group">
           <div class="menu-group-title">{{ group.title }}</div>
           <el-checkbox-group v-model="menuKeys">
@@ -150,11 +150,24 @@ async function remove(row: RoleItem) {
 </script>
 
 <style scoped>
-.menu-group {
-  margin-bottom: 8px;
+.menu-field :deep(.el-form-item__content) {
+  display: block;
+}
+.menu-group + .menu-group {
+  margin-top: 10px;
 }
 .menu-group-title {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 22px;
+}
+.menu-group :deep(.el-checkbox-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+}
+.menu-group :deep(.el-checkbox) {
+  margin-right: 0;
 }
 </style>

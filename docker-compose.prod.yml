@@ -16,21 +16,6 @@ services:
       timeout: 5s
       retries: 30
 
-  ocr:
-    build:
-      context: ./services/ocr-python
-      args:
-        APT_MIRROR: ${APT_MIRROR:-}
-        PIP_INDEX_URL: ${PIP_INDEX_URL:-}
-    restart: unless-stopped
-    environment:
-      OCR_AUTH_TOKEN: ${OCR_AUTH_TOKEN}
-    healthcheck:
-      test: ["CMD", "python", "-c", "import json,urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8000/health'))['ok']"]
-      interval: 15s
-      timeout: 5s
-      retries: 20
-
   api:
     build:
       context: .
@@ -51,8 +36,6 @@ services:
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_DIR: /app/data/storage
-      OCR_SERVICE_URL: http://ocr:8000
-      OCR_AUTH_TOKEN: ${OCR_AUTH_TOKEN}
       AI_BASE_URL: ${AI_BASE_URL:-http://host.docker.internal:48760/v1}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
@@ -63,8 +46,6 @@ services:
       - app_storage:/app/data/storage
     depends_on:
       postgres:
-        condition: service_healthy
-      ocr:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/v1/health"]

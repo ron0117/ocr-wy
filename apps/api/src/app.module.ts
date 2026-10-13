@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AccessModule } from './access/access.module';
+import { ApplicationsModule } from './applications/applications.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { AuthModule } from './auth/auth.module';
@@ -29,6 +30,7 @@ import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
     ClubsModule,
     MembersModule,
     ActivitiesModule,
+    ApplicationsModule,
     XiaoyouModule,
   ],
   controllers: [HealthController],

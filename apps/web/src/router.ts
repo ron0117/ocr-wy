@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import AppShell from './components/AppShell.vue';
 import { firstMenuPath, useAuth } from './composables/auth';
 import ActivityDetailView from './views/ActivityDetail.vue';
+import ApplicationsView from './views/Applications.vue';
+import ApplyView from './views/Apply.vue';
 import ActivitiesView from './views/Activities.vue';
 import AccountsView from './views/Accounts.vue';
 import ClubsView from './views/Clubs.vue';
@@ -16,6 +18,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: LoginView, meta: { public: true } },
+    { path: '/apply', component: ApplyView, meta: { public: true } },
     { path: '/register', redirect: '/login' },
     { path: '/a/:id', component: PlayerActivityView, meta: { public: true } },
     {
@@ -28,6 +31,7 @@ export const router = createRouter({
         { path: 'members', component: MembersView, meta: { menu: 'members' } },
         { path: 'activities', component: ActivitiesView, meta: { menu: 'activities' } },
         { path: 'activities/:id', component: ActivityDetailView, meta: { menu: 'activities' } },
+        { path: 'applications', component: ApplicationsView, meta: { menu: 'applications' } },
         { path: 'accounts', component: AccountsView, meta: { menu: 'accounts' } },
         { path: 'roles', component: RolesView, meta: { menu: 'roles' } },
       ],

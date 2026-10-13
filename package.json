@@ -15,7 +15,6 @@
     "build:types": "pnpm --filter @ocr/shared-types build",
     "dev:api": "pnpm --filter @ocr/api dev",
     "dev:web": "pnpm --filter @ocr/web dev",
-    "dev:ocr": "docker compose --profile ocr up -d --build ocr",
     "build": "pnpm --filter @ocr/shared-types build && pnpm --filter @ocr/api build && pnpm --filter @ocr/web build",
     "check": "pnpm --filter @ocr/api check",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
