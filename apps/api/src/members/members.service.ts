@@ -56,9 +56,16 @@ export class MembersService {
     return { rows };
   }
 
-  async confirmImport(user: AuthUser, clubId: string, files: Express.Multer.File[], rowsField: string | undefined) {
+  async confirmImport(
+    user: AuthUser,
+    clubId: string,
+    files: Express.Multer.File[],
+    rowsField: string | undefined,
+    renamesField?: string,
+  ) {
     const prepared = await this.prepareFiles(user, clubId, files);
     const rows = this.readConfirmField(rowsField);
+    const renames = readRenames(renamesField);
     const stored: string[] = [];
     try {
       const uploaded: string[] = [];
@@ -90,10 +97,51 @@ export class MembersService {
           updates.push({ id: existing.id, row, previousScore: existing.score });
           untrackMember(existing, exact, folded);
         }
-        const keepIds = updates.map((item) => item.id);
-        await tx.member.deleteMany({
-          where: keepIds.length === 0 ? { clubId } : { clubId, id: { notIn: keepIds } },
-        });
+        const keepIds = new Set(updates.map((item) => item.id));
+        const removalIds = current.map((member) => member.id).filter((id) => !keepIds.has(id));
+        const historyCounts =
+          removalIds.length === 0
+            ? []
+            : await tx.activityAttendance.groupBy({
+                by: ['memberId'],
+                where: { memberId: { in: removalIds } },
+                _count: { _all: true },
+              });
+        const historyIds = new Set(
+          historyCounts.flatMap((item) => (item.memberId && item._count._all > 0 ? [item.memberId] : [])),
+        );
+        const missing = current.filter((member) => historyIds.has(member.id));
+        const arriving = creates.map((row) => row.playerName);
+        if (missing.length > 0 && arriving.length > 0 && renames === undefined) {
+          throw new ConflictException({
+            statusCode: 409,
+            code: 'NEED_RENAME',
+            message: '请确认哪些旧名对应新名称',
+            missing: missing.map((member) => ({
+              memberId: member.id,
+              playerName: member.playerName,
+              attendanceCount: historyCounts.find((item) => item.memberId === member.id)?._count._all ?? 0,
+            })),
+            arriving,
+          });
+        }
+        const pairs = checkedRenames(renames ?? [], missing.map((member) => member.id), arriving);
+        const consumed = new Set(pairs.map((pair) => pair.playerName));
+        const renamedIds = new Set(pairs.map((pair) => pair.memberId));
+        for (const pair of pairs) {
+          const row = creates.find((item) => item.playerName === pair.playerName);
+          const existing = current.find((member) => member.id === pair.memberId);
+          if (!row || !existing) throw new BadRequestException('改名对照不正确');
+          await tx.member.update({
+            where: { id: pair.memberId },
+            data: { ...importFields(row), previousScore: existing.score, dataUpdatedAt: updatedAt },
+          });
+          await syncAttendanceName(tx, pair.memberId, clubId, row.playerName);
+        }
+        const deleteIds = removalIds.filter((id) => !renamedIds.has(id));
+        if (deleteIds.length > 0) {
+          await tx.member.deleteMany({ where: { id: { in: deleteIds } } });
+        }
         for (const item of updates) {
           await tx.member.update({
             where: { id: item.id },
@@ -105,9 +153,11 @@ export class MembersService {
           });
         }
         for (const row of creates) {
-          await tx.member.create({
+          if (consumed.has(row.playerName)) continue;
+          const created = await tx.member.create({
             data: { ...importFields(row), rank: 0, clubId, dataUpdatedAt: updatedAt },
           });
+          await claimAttendances(tx, clubId, created.playerName, created.id);
         }
         for (const objectName of uploaded) {
           await tx.importBatch.create({
@@ -169,26 +219,23 @@ export class MembersService {
         ...(query.clubId ? { clubId: query.clubId } : {}),
         ...(keyword ? { playerName: { contains: keyword, mode: 'insensitive' } } : {}),
       },
-      include: { club: { select: { name: true } }, wecomBinding: { select: { id: true } } },
-      orderBy: sort === 'notifyBound' ? { rank: order } : orderBy(sort, order),
+      include: { club: { select: { name: true } } },
+      orderBy: orderBy(sort, order),
     });
-    const sorted =
-      sort === 'notifyBound'
-        ? [...rows].sort((left, right) => {
-            const delta = Number(Boolean(left.wecomBinding)) - Number(Boolean(right.wecomBinding));
-            return order === 'asc' ? delta : -delta;
-          })
-        : rows;
-    return sorted.map((row) => present(row));
+    return rows.map((row) => present(row));
   }
 
   async create(user: AuthUser, dto: WriteMemberDto) {
     const fields = memberInput(dto);
     await this.clubs.findOwned(user, fields.clubId);
     try {
-      const row = await this.prisma.member.create({
-        data: { ...fields, dataUpdatedAt: new Date() },
-        include: { club: { select: { name: true } }, wecomBinding: { select: { id: true } } },
+      const row = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.member.create({
+          data: { ...fields, dataUpdatedAt: new Date() },
+          include: { club: { select: { name: true } } },
+        });
+        await claimAttendances(tx, created.clubId, created.playerName, created.id);
+        return created;
       });
       return present(row);
     } catch (error) {
@@ -201,15 +248,22 @@ export class MembersService {
     const fields = memberInput(dto);
     await this.clubs.findOwned(user, fields.clubId);
     try {
-      const row = await this.prisma.member.update({
-        where: { id: existing.id },
-        data: {
-          ...fields,
-          previousRank: existing.rank,
-          previousScore: existing.score,
-          dataUpdatedAt: new Date(),
-        },
-        include: { club: { select: { name: true } }, wecomBinding: { select: { id: true } } },
+      const row = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.member.update({
+          where: { id: existing.id },
+          data: {
+            ...fields,
+            previousRank: existing.rank,
+            previousScore: existing.score,
+            dataUpdatedAt: new Date(),
+          },
+          include: { club: { select: { name: true } } },
+        });
+        if (existing.playerName !== fields.playerName || existing.clubId !== fields.clubId) {
+          await syncAttendanceName(tx, existing.id, fields.clubId, fields.playerName);
+          await claimAttendances(tx, fields.clubId, fields.playerName, existing.id);
+        }
+        return updated;
       });
       return present(row);
     } catch (error) {
@@ -217,12 +271,31 @@ export class MembersService {
     }
   }
 
-  async unbind(user: AuthUser, memberId: string) {
-    const existing = await this.findOwned(user, memberId);
-    const binding = await this.prisma.wecomBinding.findUnique({ where: { memberId: existing.id } });
-    if (!binding) return { ok: true, alreadyUnbound: true };
-    await this.prisma.wecomBinding.delete({ where: { memberId: existing.id } });
-    return { ok: true, alreadyUnbound: false };
+  async activities(user: AuthUser, memberId: string) {
+    const member = await this.findOwned(user, memberId);
+    const includeClubs = { clubs: { include: { club: { select: { id: true, name: true } } } } };
+    const [attendedRows, missed] = await Promise.all([
+      this.prisma.activityAttendance.findMany({
+        where: { memberId: member.id, activity: this.access.activityWhere(user) },
+        include: { activity: { include: includeClubs } },
+        orderBy: { activity: { startsAt: 'desc' } },
+      }),
+      this.prisma.activity.findMany({
+        where: {
+          AND: [
+            this.access.activityWhere(user),
+            { clubs: { some: { clubId: member.clubId } } },
+            { attendances: { none: { memberId: member.id } } },
+          ],
+        },
+        include: includeClubs,
+        orderBy: { startsAt: 'desc' },
+      }),
+    ]);
+    return {
+      attended: attendedRows.map((row) => ({ ...presentActivity(row.activity), late: row.late })),
+      missed: missed.map((activity) => presentActivity(activity)),
+    };
   }
 
   async remove(user: AuthUser, memberId: string) {
@@ -296,7 +369,6 @@ function present(row: {
   previousRank: number | null;
   previousScore: number | null;
   club: { name: string };
-  wecomBinding: { id: string } | null;
 }) {
   return {
     id: row.id,
@@ -313,8 +385,113 @@ function present(row: {
     dataUpdatedAt: row.dataUpdatedAt.toISOString(),
     rankChange: change(row.previousRank, row.rank, false),
     scoreChange: change(row.previousScore, row.score, true),
-    notifyBound: Boolean(row.wecomBinding),
   };
+}
+
+function presentActivity(activity: {
+  id: string;
+  title: string;
+  status: 'PUBLISHED' | 'ENDED';
+  startsAt: Date;
+  clubs: Array<{ club: { id: string; name: string } }>;
+}) {
+  return {
+    id: activity.id,
+    title: activity.title,
+    status: activity.status,
+    startsAt: activity.startsAt.toISOString(),
+    clubs: activity.clubs.map((item) => ({ id: item.club.id, name: item.club.name })),
+  };
+}
+
+function readRenames(field: string | undefined) {
+  if (field === undefined) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(field);
+  } catch {
+    throw new BadRequestException('改名对照不正确');
+  }
+  if (!Array.isArray(parsed)) throw new BadRequestException('改名对照不正确');
+  return parsed.map((item) => {
+    if (!item || typeof item !== 'object') throw new BadRequestException('改名对照不正确');
+    const memberId = 'memberId' in item ? item.memberId : undefined;
+    const playerName = 'playerName' in item ? item.playerName : undefined;
+    if (typeof memberId !== 'string' || typeof playerName !== 'string' || !playerName.trim()) {
+      throw new BadRequestException('改名对照不正确');
+    }
+    return { memberId, playerName: playerName.trim() };
+  });
+}
+
+function checkedRenames(
+  pairs: Array<{ memberId: string; playerName: string }>,
+  missingIds: string[],
+  arriving: string[],
+) {
+  const missing = new Set(missingIds);
+  const names = new Set(arriving);
+  const seenMembers = new Set<string>();
+  const seenNames = new Set<string>();
+  for (const pair of pairs) {
+    if (!missing.has(pair.memberId) || !names.has(pair.playerName)) {
+      throw new BadRequestException('改名对照不正确');
+    }
+    if (seenMembers.has(pair.memberId) || seenNames.has(pair.playerName)) {
+      throw new BadRequestException('改名对照不正确');
+    }
+    seenMembers.add(pair.memberId);
+    seenNames.add(pair.playerName);
+  }
+  return pairs;
+}
+
+async function syncAttendanceName(
+  tx: Prisma.TransactionClient,
+  memberId: string,
+  clubId: string,
+  playerName: string,
+) {
+  const rows = await tx.activityAttendance.findMany({ where: { memberId } });
+  for (const row of rows) {
+    const clash = await tx.activityAttendance.findFirst({
+      where: { activityId: row.activityId, clubId, playerName, NOT: { id: row.id } },
+    });
+    if (clash) {
+      await tx.activityAttendance.delete({ where: { id: clash.id } });
+      if (clash.late) {
+        await tx.activityAttendance.update({ where: { id: row.id }, data: { late: true } });
+      }
+    }
+    await tx.activityAttendance.update({
+      where: { id: row.id },
+      data: { playerName, clubId },
+    });
+  }
+}
+
+async function claimAttendances(
+  tx: Prisma.TransactionClient,
+  clubId: string,
+  playerName: string,
+  memberId: string,
+) {
+  const orphans = await tx.activityAttendance.findMany({
+    where: { clubId, playerName, memberId: null },
+  });
+  for (const orphan of orphans) {
+    const taken = await tx.activityAttendance.findFirst({
+      where: { activityId: orphan.activityId, memberId },
+    });
+    if (taken) {
+      if (orphan.late && !taken.late) {
+        await tx.activityAttendance.update({ where: { id: taken.id }, data: { late: true } });
+      }
+      await tx.activityAttendance.delete({ where: { id: orphan.id } });
+      continue;
+    }
+    await tx.activityAttendance.update({ where: { id: orphan.id }, data: { memberId } });
+  }
 }
 
 interface PreparedFile {
@@ -395,7 +572,6 @@ function orderBy(sort: MemberSort, order: Prisma.SortOrder): Prisma.MemberOrderB
       return { weeklyActivity: nullable };
     case 'joinedText':
       return { joinedText: nullable };
-    case 'notifyBound':
     case 'rank':
       return { rank: order };
   }

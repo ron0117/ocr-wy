@@ -16,6 +16,10 @@
         :ellipsis="false"
         router
       >
+        <el-menu-item index="/">
+          <el-icon><Calendar /></el-icon>
+          <span>活动安排</span>
+        </el-menu-item>
         <el-sub-menu v-for="group in menus" :key="group.key" :index="group.key">
           <template #title>
             <el-icon><OfficeBuilding v-if="group.key !== 'system'" /><Setting v-else /></el-icon>
@@ -54,6 +58,10 @@
         router
         @select="drawer = false"
       >
+        <el-menu-item index="/">
+          <el-icon><Calendar /></el-icon>
+          <span>活动安排</span>
+        </el-menu-item>
         <el-sub-menu v-for="group in menus" :key="group.key" :index="group.key">
           <template #title>
             <el-icon><OfficeBuilding v-if="group.key !== 'system'" /><Setting v-else /></el-icon>
@@ -75,7 +83,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Menu, OfficeBuilding, Setting } from '@element-plus/icons-vue';
+import { Calendar, Menu, OfficeBuilding, Setting } from '@element-plus/icons-vue';
 import { me } from '../api/client';
 import { useAuth } from '../composables/auth';
 import { useNarrow } from '../composables/viewport';

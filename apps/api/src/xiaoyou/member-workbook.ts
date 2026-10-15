@@ -12,7 +12,6 @@ export interface MemberExportRow {
   weeklyActivity: number | null;
   joinedText: string | null;
   dataUpdatedAt: Date;
-  bound: boolean;
 }
 
 const HEADERS = [
@@ -26,7 +25,6 @@ const HEADERS = [
   '周活跃',
   '入会时间',
   '数据更新时间',
-  '企业微信角色绑定状态',
 ];
 
 export function buildMemberWorkbook(rows: MemberExportRow[]): Buffer {
@@ -53,7 +51,6 @@ export function buildMemberWorkbook(rows: MemberExportRow[]): Buffer {
     row.weeklyActivity ?? '',
     asExcelText(row.joinedText ?? ''),
     asExcelText(formatShanghai(row.dataUpdatedAt, 'minute')),
-    row.bound ? '已绑定' : '未绑定',
   ]);
   const sheet = XLSX.utils.aoa_to_sheet([HEADERS, ...body]);
   const book = XLSX.utils.book_new();

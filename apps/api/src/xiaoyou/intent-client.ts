@@ -8,10 +8,24 @@ import { SpeechBook } from './speech';
 
 const IntentSchema = z
   .object({
-    tool: z.enum(['list_clubs', 'find_club', 'get_club_summary', 'export_club_members_excel', 'lookup_member', 'answer_help']),
+    tool: z.enum([
+      'list_clubs',
+      'find_club',
+      'get_club_summary',
+      'export_club_members_excel',
+      'lookup_member',
+      'list_activities',
+      'get_activity',
+      'activity_roster',
+      'member_activities',
+      'answer_help',
+    ]),
     clubName: z.string().max(80).optional(),
     playerName: z.string().max(40).optional(),
     field: z.string().max(20).optional(),
+    title: z.string().max(80).optional(),
+    status: z.enum(['PUBLISHED', 'ENDED']).optional(),
+    side: z.enum(['attended', 'missed', 'both']).optional(),
     clubNames: z.array(z.string().max(80)).max(20).optional(),
     allMatching: z.boolean().optional(),
   })
@@ -97,6 +111,25 @@ export class IntentClient {
     const clubName = parsed.data.clubName?.trim() || undefined;
     if (parsed.data.tool === 'list_clubs') return { tool: 'list_clubs' };
     if (parsed.data.tool === 'answer_help') return { tool: 'answer_help' };
+    if (parsed.data.tool === 'list_activities') {
+      return { tool: 'list_activities', clubName, status: parsed.data.status };
+    }
+    if (parsed.data.tool === 'get_activity') {
+      return { tool: 'get_activity', title: parsed.data.title?.trim() || undefined, clubName };
+    }
+    if (parsed.data.tool === 'activity_roster') {
+      return {
+        tool: 'activity_roster',
+        title: parsed.data.title?.trim() || undefined,
+        clubName,
+        side: parsed.data.side ?? 'both',
+      };
+    }
+    if (parsed.data.tool === 'member_activities') {
+      const playerName = parsed.data.playerName?.trim();
+      if (!playerName) return null;
+      return { tool: 'member_activities', playerName, clubName };
+    }
     if (parsed.data.tool === 'lookup_member') {
       const playerName = parsed.data.playerName?.trim();
       if (!playerName) return null;

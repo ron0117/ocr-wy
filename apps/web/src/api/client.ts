@@ -24,6 +24,18 @@ api.interceptors.response.use(
   },
 );
 
+export interface RenamePrompt {
+  missing: Array<{ memberId: string; playerName: string; attendanceCount: number }>;
+  arriving: string[];
+}
+
+export function renamePrompt(error: unknown): RenamePrompt | null {
+  if (!axios.isAxiosError(error)) return null;
+  const data = error.response?.data as { code?: string; missing?: RenamePrompt['missing']; arriving?: string[] } | undefined;
+  if (data?.code !== 'NEED_RENAME' || !Array.isArray(data.missing) || !Array.isArray(data.arriving)) return null;
+  return { missing: data.missing, arriving: data.arriving };
+}
+
 export function errorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     const message = error.response?.data?.message;
@@ -134,7 +146,6 @@ export interface MemberItem {
   dataUpdatedAt: string;
   rankChange: MemberChange | null;
   scoreChange: MemberChange | null;
-  notifyBound: boolean;
 }
 
 export async function listClubs() {
@@ -175,10 +186,16 @@ export async function previewMembers(clubId: string, files: File[]) {
   return data;
 }
 
-export async function confirmMembers(clubId: string, files: File[], rows: ImportMemberRow[]) {
+export async function confirmMembers(
+  clubId: string,
+  files: File[],
+  rows: ImportMemberRow[],
+  renames?: Array<{ memberId: string; playerName: string }>,
+) {
   const body = new FormData();
   for (const file of files) body.append('files', file);
   body.append('rows', JSON.stringify(rows));
+  if (renames) body.append('renames', JSON.stringify(renames));
   const { data } = await api.post<{ rowCount: number; imageCount: number; updatedAt: string }>(
     `/clubs/${clubId}/imports`,
     body,
@@ -223,8 +240,21 @@ export async function deleteMembers(ids: string[]) {
   return data;
 }
 
-export async function unbindMember(memberId: string) {
-  const { data } = await api.delete<{ ok: boolean; alreadyUnbound: boolean }>(`/members/${memberId}/wecom-binding`);
+export interface MemberActivities {
+  attended: Array<ActivityBrief & { late: boolean }>;
+  missed: ActivityBrief[];
+}
+
+export interface ActivityBrief {
+  id: string;
+  title: string;
+  status: 'PUBLISHED' | 'ENDED';
+  startsAt: string;
+  clubs: Array<{ id: string; name: string }>;
+}
+
+export async function memberActivities(memberId: string) {
+  const { data } = await api.get<MemberActivities>(`/members/${memberId}/activities`);
   return data;
 }
 
@@ -242,37 +272,28 @@ export interface WecomAudience {
 export interface ActivityItem {
   id: string;
   title: string;
+  note: string | null;
   status: 'PUBLISHED' | 'ENDED';
   startsAt: string;
   remindAt: string | null;
   publishedAt: string;
   endedAt: string | null;
   clubs: Array<{ id: string; name: string }>;
-  publishStatus: 'SENT' | 'FAILED' | null;
-  publishError: string | null;
-  notifications: Array<{
-    id: string;
-    kind: 'PUBLISH' | 'REMIND';
-    trigger: 'AUTO' | 'MANUAL';
-    status: 'SENT' | 'FAILED';
-    recipientCount: number;
-    errorMessage: string | null;
-    createdAt: string;
-  }>;
 }
 
-export interface CheckInRow {
+export interface ActivityInput {
+  title: string;
+  note: string | null;
+  clubIds: string[];
+  startsAt: string;
+}
+
+export interface AttendanceRow {
   id: string;
   playerName: string;
   clubName: string;
-  notifyBound: boolean;
-  checkedIn: boolean;
-  checkedAt: string | null;
-}
-
-export async function wecomAudience() {
-  const { data } = await api.get<WecomAudience>('/wecom/audience');
-  return data;
+  attended: boolean;
+  late: boolean;
 }
 
 export async function listActivities() {
@@ -280,22 +301,18 @@ export async function listActivities() {
   return data;
 }
 
-export async function createActivity(payload: {
-  title: string;
-  clubIds: string[];
-  startsAt: string;
-  remindAt?: string | null;
-  partyIds?: string[];
-  tagIds?: string[];
-  userIds?: string[];
-}) {
+export async function createActivity(payload: ActivityInput) {
   const { data } = await api.post<ActivityItem>('/activities', payload);
   return data;
 }
 
-export async function getActivity(activityId: string) {
-  const { data } = await api.get<ActivityItem>(`/activities/${activityId}`);
+export async function updateActivity(activityId: string, payload: ActivityInput) {
+  const { data } = await api.patch<ActivityItem>(`/activities/${activityId}`, payload);
   return data;
+}
+
+export async function deleteActivity(activityId: string) {
+  await api.delete(`/activities/${activityId}`);
 }
 
 export async function endActivity(activityId: string) {
@@ -303,51 +320,16 @@ export async function endActivity(activityId: string) {
   return data;
 }
 
-export async function activityCheckIns(activityId: string) {
-  const { data } = await api.get<CheckInRow[]>(`/activities/${activityId}/check-ins`);
+export async function activityAttendance(activityId: string) {
+  const { data } = await api.get<AttendanceRow[]>(`/activities/${activityId}/attendance`);
   return data;
 }
 
-export async function resendActivity(activityId: string, kind: 'publish' | 'remind') {
-  const { data } = await api.post(`/activities/${activityId}/notifications`, { kind });
-  return data;
-}
-
-export const playerApi = axios.create({
-  baseURL: '/api/v1',
-  timeout: 30_000,
-});
-
-playerApi.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('wecom_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-export interface PlayerActivity {
-  id: string;
-  title: string;
-  status: 'PUBLISHED' | 'ENDED';
-  startsAt: string;
-  clubs: Array<{ id: string; name: string }>;
-  phase: 'unbound' | 'ready' | 'other_club' | 'closed';
-  candidates?: Array<{ id: string; playerName: string; clubName: string }>;
-  member?: { id: string; playerName: string; clubName: string } | null;
-  checkedAt?: string | null;
-}
-
-export async function playerActivity(activityId: string) {
-  const { data } = await playerApi.get<PlayerActivity>(`/player/activities/${activityId}`);
-  return data;
-}
-
-export async function bindPlayerRole(activityId: string, memberId: string) {
-  const { data } = await playerApi.post(`/player/activities/${activityId}/binding`, { memberId });
-  return data;
-}
-
-export async function playerCheckIn(activityId: string) {
-  const { data } = await playerApi.post<{ checkedAt: string }>(`/player/activities/${activityId}/check-in`);
+export async function saveActivityAttendance(
+  activityId: string,
+  marks: Array<{ memberId: string; late: boolean }>,
+) {
+  const { data } = await api.put<AttendanceRow[]>(`/activities/${activityId}/attendance`, { marks });
   return data;
 }
 

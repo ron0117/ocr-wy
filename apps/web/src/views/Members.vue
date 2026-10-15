@@ -53,14 +53,11 @@
         <el-table-column prop="fashion" label="风尚度" minWidth="100" sortable="custom" />
         <el-table-column prop="weeklyActivity" label="周活跃" width="110" sortable="custom" />
         <el-table-column prop="joinedText" label="入会时间" width="150" sortable="custom" />
-        <el-table-column prop="notifyBound" label="是否绑定通知" width="140" sortable="custom">
-          <template #default="{ row }">{{ row.notifyBound ? '已绑定' : '未绑定' }}</template>
-        </el-table-column>
-        <el-table-column label="操作" :width="narrow ? 112 : 200" :fixed="narrow ? false : 'right'">
+        <el-table-column label="操作" :width="narrow ? 112 : 220" :fixed="narrow ? false : 'right'">
           <template #default="{ row }">
             <div class="cell-ops">
+              <el-button link type="primary" @click="openHistory(row as MemberItem)">查询活跃度</el-button>
               <el-button link type="primary" @click="openEdit(row as MemberItem)">编辑</el-button>
-              <el-button v-if="row.notifyBound" link type="primary" @click="unbind(row as MemberItem)">解除绑定</el-button>
               <el-button link type="danger" @click="remove(row as MemberItem)">删除</el-button>
             </div>
           </template>
@@ -118,10 +115,63 @@
         <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
       </template>
     </el-dialog>
-</template>
+    <el-dialog v-model="historyOpen" :title="historyTitle" width="720px">
+      <h3>已签到</h3>
+      <el-table :data="attendedRows" empty-text="没有已签到的活动">
+        <el-table-column prop="title" label="标题" min-width="140" />
+        <el-table-column label="俱乐部" min-width="140">
+          <template #default="{ row }">{{ activityClubs(row as AttendedRow) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" min-width="160">
+          <template #default="{ row }">{{ formatTime((row as AttendedRow).startsAt) }}</template>
+        </el-table-column>
+        <el-table-column label="出席" min-width="140">
+          <template #default="{ row }">
+            <span class="mark-in">已签到</span>
+            <span v-if="(row as AttendedRow).late" class="mark-late">迟到</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        v-if="attendedSorted.length > 0"
+        class="history-page"
+        background
+        layout="total, prev, pager, next"
+        :total="attendedSorted.length"
+        :page-size="historyPageSize"
+        :current-page="attendedPage"
+        @current-change="attendedPage = $event"
+      />
+      <h3 class="history-gap">未签到</h3>
+      <el-table :data="missedRows" empty-text="没有未签到的活动">
+        <el-table-column prop="title" label="标题" min-width="140" />
+        <el-table-column label="俱乐部" min-width="140">
+          <template #default="{ row }">{{ activityClubs(row as ActivityBrief) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" min-width="160">
+          <template #default="{ row }">{{ formatTime((row as ActivityBrief).startsAt) }}</template>
+        </el-table-column>
+        <el-table-column label="出席" min-width="140">
+          <template #default>
+            <span class="mark-out">未签到</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        v-if="missedSorted.length > 0"
+        class="history-page"
+        background
+        layout="total, prev, pager, next"
+        :total="missedSorted.length"
+        :page-size="historyPageSize"
+        :current-page="missedPage"
+        @current-change="missedPage = $event"
+      />
+    </el-dialog>
+  </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useNarrow } from '../composables/viewport';
 import { ElMessageBox } from 'element-plus';
 import { Download, Plus } from '@element-plus/icons-vue';
@@ -133,12 +183,16 @@ import {
   errorMessage,
   listClubs,
   listMembers,
-  unbindMember,
+  memberActivities,
   updateMember,
+  type ActivityBrief,
   type ClubItem,
+  type MemberActivities,
   type MemberInput,
   type MemberItem,
 } from '../api/client';
+
+type AttendedRow = ActivityBrief & { late: boolean };
 
 const narrow = useNarrow();
 const clubs = ref<ClubItem[]>([]);
@@ -148,6 +202,21 @@ const keyword = ref('');
 const sort = ref('score');
 const order = ref<'asc' | 'desc'>('desc');
 const selected = ref<MemberItem[]>([]);
+const historyOpen = ref(false);
+const historyTitle = ref('活跃度');
+const history = ref<MemberActivities>({ attended: [], missed: [] });
+const historyPageSize = 10;
+const attendedPage = ref(1);
+const missedPage = ref(1);
+
+function byNewest<T extends { startsAt: string }>(rows: T[]) {
+  return [...rows].sort((left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime());
+}
+
+const attendedSorted = computed(() => byNewest(history.value.attended));
+const missedSorted = computed(() => byNewest(history.value.missed));
+const attendedRows = computed(() => attendedSorted.value.slice((attendedPage.value - 1) * historyPageSize, attendedPage.value * historyPageSize));
+const missedRows = computed(() => missedSorted.value.slice((missedPage.value - 1) * historyPageSize, missedPage.value * historyPageSize));
 const loading = ref(false);
 const saving = ref(false);
 const removing = ref(false);
@@ -288,18 +357,25 @@ async function submit() {
   }
 }
 
-async function unbind(row: MemberItem) {
+function formatTime(value: string) {
+  return new Date(value).toLocaleString('zh-CN', { hour12: false });
+}
+
+function activityClubs(row: ActivityBrief) {
+  return row.clubs.map((club) => club.name).join('、');
+}
+
+async function openHistory(row: MemberItem) {
+  historyTitle.value = `${row.playerName}的活跃度`;
+  attendedPage.value = 1;
+  missedPage.value = 1;
+  historyOpen.value = true;
+  history.value = { attended: [], missed: [] };
   try {
-    await ElMessageBox.confirm(`解除「${row.playerName}」的通知绑定？`, '解除绑定', { type: 'warning' });
-  } catch {
-    return;
-  }
-  error.value = '';
-  try {
-    await unbindMember(row.id);
-    await load();
+    history.value = await memberActivities(row.id);
   } catch (cause) {
-    error.value = errorMessage(cause, '解除绑定失败');
+    error.value = errorMessage(cause, '活跃度加载失败');
+    historyOpen.value = false;
   }
 }
 
@@ -348,3 +424,21 @@ onMounted(async () => {
   await load();
 });
 </script>
+
+<style scoped>
+.history-gap {
+  margin-top: 16px;
+}
+.history-page {
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+.mark-in {
+  color: #1f7a4d;
+  margin-right: 8px;
+}
+.mark-out,
+.mark-late {
+  color: #c45656;
+}
+</style>

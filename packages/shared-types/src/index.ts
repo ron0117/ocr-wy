@@ -73,8 +73,12 @@ export const MENU_CATALOG = [
       { key: 'clubs', title: '创建俱乐部', path: '/clubs' },
       { key: 'imports', title: '导入人员', path: '/imports' },
       { key: 'members', title: '人员列表', path: '/members' },
-      { key: 'activities', title: '活动签到', path: '/activities' },
     ],
+  },
+  {
+    key: 'activity-management',
+    title: '活动管理',
+    children: [{ key: 'activities', title: '活动签到', path: '/activities' }],
   },
   {
     key: 'recruitment',

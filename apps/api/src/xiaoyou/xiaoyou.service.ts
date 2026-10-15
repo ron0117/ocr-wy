@@ -193,7 +193,7 @@ export class XiaoyouService {
     started: number,
   ): Promise<Turn> {
     const basic = !this.intent.enabled();
-    if (!this.canReadMembers(user)) {
+    if (!this.canReadMembers(user) && !this.canReadActivities(user)) {
       const local = planLocally(text);
       if (local.tool === 'answer_help' && !session.pending) return this.help(started, basic);
       return this.plain('no-menu', {}, [], basic, started, local.tool, 'DENIED', 'NO_MENU');
@@ -202,6 +202,7 @@ export class XiaoyouService {
     const visible = await this.visibleClubs(user);
     const pending = readPending(session.pending);
     if (pending && !isNewTopic(text) && !planPackAll(text)) {
+      if (pending.intent === 'activity') return this.pickActivity(user, pending, text, basic, started);
       if (pending.intent === 'lookup' && pending.playerNames?.length) {
         return this.pickMember(user, visible, pending, text, basic, started);
       }
@@ -231,7 +232,13 @@ export class XiaoyouService {
     pendingNames: string[],
   ): Promise<{ tool: PlannedTool; basicMode: boolean }> {
     const lookup = planLocally(text);
-    if (lookup.tool === 'lookup_member') {
+    if (
+      lookup.tool === 'lookup_member' ||
+      lookup.tool === 'list_activities' ||
+      lookup.tool === 'get_activity' ||
+      lookup.tool === 'activity_roster' ||
+      lookup.tool === 'member_activities'
+    ) {
       return { tool: lookup, basicMode: !this.intent.enabled() };
     }
     const packed = planPackAll(text);
@@ -259,6 +266,22 @@ export class XiaoyouService {
   ): Promise<Turn> {
     if (tool.tool === 'answer_help') return this.help(started, basicMode);
     if (tool.tool === 'list_clubs') return this.list(visible, basicMode, started);
+    if (tool.tool === 'list_activities' || tool.tool === 'get_activity' || tool.tool === 'activity_roster') {
+      if (!this.canReadActivities(user)) {
+        return this.plain('activity-no-menu', {}, ['活动签到'], basicMode, started, tool.tool, 'DENIED', 'NO_MENU');
+      }
+      if (tool.tool === 'list_activities') return this.listActivities(user, visible, tool.clubName, tool.status, basicMode, started);
+      return this.openActivity(user, visible, tool.tool, tool.title, tool.clubName, tool.tool === 'activity_roster' ? tool.side : 'both', basicMode, started);
+    }
+    if (tool.tool === 'member_activities') {
+      if (!this.canReadMembers(user)) {
+        return this.plain('no-menu', {}, [], basicMode, started, tool.tool, 'DENIED', 'NO_MENU');
+      }
+      return this.memberActivities(user, visible, tool.playerName, tool.clubName, basicMode, started);
+    }
+    if (!this.canReadMembers(user)) {
+      return this.plain('no-menu', {}, [], basicMode, started, tool.tool, 'DENIED', 'NO_MENU');
+    }
     if (tool.tool === 'lookup_member') return this.lookupMember(user, visible, tool.playerName, tool.clubName, tool.field, basicMode, started);
     if (tool.tool === 'export_club_members_excel' && (tool.allMatching || (tool.clubNames?.length ?? 0) > 1)) {
       const clubs = tool.allMatching
@@ -344,7 +367,7 @@ export class XiaoyouService {
   ): Promise<Turn> {
     const members = await this.prisma.member.findMany({
       where: { clubId: club.id },
-      include: { wecomBinding: { select: { id: true } } },
+      include: { club: { select: { name: true } } },
     });
     const base = this.clubTurn('export_club_members_excel', club.id, basicMode, started);
     if (!members.length) {
@@ -373,7 +396,6 @@ export class XiaoyouService {
           weeklyActivity: row.weeklyActivity,
           joinedText: row.joinedText,
           dataUpdatedAt: row.dataUpdatedAt,
-          bound: Boolean(row.wecomBinding),
         })),
       );
       await this.storage.upload(objectName, buffer, MIME);
@@ -417,7 +439,7 @@ export class XiaoyouService {
   ): Promise<Turn> {
     const members = await this.prisma.member.findMany({
       where: { clubId: { in: clubs.map((club) => club.id) } },
-      include: { wecomBinding: { select: { id: true } } },
+      include: { club: { select: { name: true } } },
     });
     const counts = new Map(clubs.map((club) => [club.id, 0]));
     for (const row of members) counts.set(row.clubId, (counts.get(row.clubId) ?? 0) + 1);
@@ -453,7 +475,6 @@ export class XiaoyouService {
           weeklyActivity: row.weeklyActivity,
           joinedText: row.joinedText,
           dataUpdatedAt: row.dataUpdatedAt,
-          bound: Boolean(row.wecomBinding),
         })),
       );
       await this.storage.upload(objectName, buffer, MIME);
@@ -540,7 +561,7 @@ export class XiaoyouService {
     if (!clubs.length || !name) return this.memberMissing(started, basicMode, '', name);
     const rows = await this.prisma.member.findMany({
       where: { clubId: { in: clubs.map((club) => club.id) }, playerName: { contains: name } },
-      include: { wecomBinding: { select: { id: true } } },
+      include: { club: { select: { name: true } } },
       take: 40,
     });
     const exact = rows.filter((row) => row.playerName.trim() === name);
@@ -586,16 +607,17 @@ export class XiaoyouService {
     const option = options[picked];
     const row = await this.prisma.member.findFirst({
       where: { clubId: option.club.id, playerName: option.playerName },
-      include: { wecomBinding: { select: { id: true } } },
+      include: { club: { select: { name: true } } },
     });
     if (!row) return this.memberMissing(started, basicMode, option.club.name, option.playerName);
+    if (pending.follow === 'member_activities') return this.speakMemberActivities(user, row, basicMode, started);
     return this.readMember(user, option.club, row, pending.field ?? 'all', basicMode, started);
   }
 
   private async readMember(
     user: AuthUser,
     club: VisibleClub,
-    row: { playerName: string; rank: number; level: number | null; path: string | null; score: number | null; fashion: number | null; weeklyActivity: number | null; joinedText: string | null; dataUpdatedAt: Date; wecomBinding: { id: string } | null },
+    row: { playerName: string; rank: number; level: number | null; path: string | null; score: number | null; fashion: number | null; weeklyActivity: number | null; joinedText: string | null; dataUpdatedAt: Date },
     field: MemberField,
     basicMode: boolean,
     started: number,
@@ -616,7 +638,6 @@ export class XiaoyouService {
       weeklyActivity: row.weeklyActivity,
       joinedText: row.joinedText,
       updatedText: formatShanghai(row.dataUpdatedAt, 'minute'),
-      bound: Boolean(row.wecomBinding),
     };
     const described = describeMember(snapshot, field);
     return {
@@ -970,6 +991,239 @@ export class XiaoyouService {
 
   private canReadMembers(user: AuthUser): boolean {
     return user.isSuper || user.menuKeys.includes('members');
+  }
+
+  private canReadActivities(user: AuthUser): boolean {
+    return user.isSuper || user.menuKeys.includes('activities');
+  }
+
+  private async listActivities(
+    user: AuthUser,
+    visible: VisibleClub[],
+    clubName: string | undefined,
+    status: 'PUBLISHED' | 'ENDED' | undefined,
+    basicMode: boolean,
+    started: number,
+  ): Promise<Turn> {
+    const clubIds = clubName
+      ? visible.filter((club) => club.name.includes(clubName) || clubName.includes(club.name)).map((club) => club.id)
+      : null;
+    if (clubIds && clubIds.length === 0) return this.missing(started, basicMode, clubName ?? '', visible);
+    const rows = await this.prisma.activity.findMany({
+      where: {
+        AND: [
+          this.access.activityWhere(user),
+          ...(status ? [{ status }] : []),
+          ...(clubIds ? [{ clubs: { some: { clubId: { in: clubIds } } } }] : []),
+        ],
+      },
+      include: { clubs: { include: { club: { select: { name: true } } } } },
+      orderBy: { startsAt: 'desc' },
+      take: 30,
+    });
+    if (!rows.length) return this.plain('activity-empty', {}, ['没有这样的活动'], basicMode, started, 'list_activities', 'OK', 'EMPTY');
+    const activityList = rows.map((row) => `「${row.title}」${formatShanghai(row.startsAt, 'minute')}`).join('、');
+    return this.plain('activity-list', { activityList }, [activityList], basicMode, started, 'list_activities', 'OK', null);
+  }
+
+  private async openActivity(
+    user: AuthUser,
+    visible: VisibleClub[],
+    tool: 'get_activity' | 'activity_roster',
+    title: string | undefined,
+    clubName: string | undefined,
+    side: 'attended' | 'missed' | 'both',
+    basicMode: boolean,
+    started: number,
+  ): Promise<Turn> {
+    const rows = await this.prisma.activity.findMany({
+      where: this.access.activityWhere(user),
+      select: { id: true, title: true },
+      orderBy: { startsAt: 'desc' },
+    });
+    const name = title?.trim();
+    if (!name) {
+      if (!rows.length) return this.plain('activity-empty', {}, ['没有这样的活动'], basicMode, started, tool, 'OK', 'EMPTY');
+      return this.activityPending(tool, side, rows.slice(0, 8), basicMode, started);
+    }
+    const exact = rows.filter((row) => row.title.trim() === name);
+    const pool = exact.length ? exact : rows.filter((row) => row.title.includes(name));
+    if (!pool.length) return this.plain('activity-missing', { title: name }, [name], basicMode, started, tool, 'OK', 'NOT_FOUND');
+    if (pool.length > 1) return this.activityPending(tool, exact.length === 1 ? side : side, pool.slice(0, 8), basicMode, started, exact.length === 0);
+    return this.readActivity(user, visible, pool[0].id, tool, side, basicMode, started);
+  }
+
+  private activityPending(
+    tool: 'get_activity' | 'activity_roster',
+    side: 'attended' | 'missed' | 'both',
+    rows: Array<{ id: string; title: string }>,
+    basicMode: boolean,
+    started: number,
+    confirm = false,
+  ): Turn {
+    const activityList = rows.map((row, index) => `${index + 1}.「${row.title}」`).join('、');
+    return {
+      ...this.plain('activity-choice', { activityList }, [activityList], basicMode, started, tool, 'OK', confirm ? 'NEED_CONFIRM' : 'NEED_CHOICE'),
+      pending: { kind: confirm ? 'confirm' : 'choose', intent: 'activity', clubIds: [], activityIds: rows.map((row) => row.id), activityTool: tool, rosterSide: side },
+    };
+  }
+
+  private async pickActivity(
+    user: AuthUser,
+    pending: PendingState,
+    text: string,
+    basicMode: boolean,
+    started: number,
+  ): Promise<Turn> {
+    const ids = pending.activityIds ?? [];
+    const rows = await this.prisma.activity.findMany({
+      where: { id: { in: ids }, AND: [this.access.activityWhere(user)] },
+      select: { id: true, title: true },
+    });
+    const ordered = ids.flatMap((id) => rows.filter((row) => row.id === id));
+    const trimmed = text.trim().replace(/[。.!！]$/u, '');
+    if (/^(?:不是|不对|取消|算了|不要)$/u.test(trimmed)) {
+      return this.plain('activity-missing', {}, ['说清楚标题'], basicMode, started, pending.activityTool ?? 'get_activity', 'OK', 'REJECTED');
+    }
+    const index = /^(?:第)?(\d{1,2})(?:个)?$/u.exec(trimmed);
+    const picked = index ? ordered[Number(index[1]) - 1] : ordered.find((row) => row.title === trimmed || row.title.includes(trimmed));
+    if (!picked) return this.activityPending(pending.activityTool ?? 'get_activity', pending.rosterSide ?? 'both', ordered, basicMode, started);
+    return this.readActivity(user, [], picked.id, pending.activityTool ?? 'get_activity', pending.rosterSide ?? 'both', basicMode, started);
+  }
+
+  private async readActivity(
+    user: AuthUser,
+    _visible: VisibleClub[],
+    activityId: string,
+    tool: 'get_activity' | 'activity_roster',
+    side: 'attended' | 'missed' | 'both',
+    basicMode: boolean,
+    started: number,
+  ): Promise<Turn> {
+    const activity = await this.prisma.activity.findFirst({
+      where: { id: activityId, AND: [this.access.activityWhere(user)] },
+      include: { clubs: { include: { club: { select: { name: true } } } }, attendances: true },
+    });
+    if (!activity) return this.plain('activity-missing', {}, ['没找到这场活动'], basicMode, started, tool, 'OK', 'NOT_FOUND');
+    const clubIds = activity.clubs.map((item) => item.clubId);
+    const members = await this.prisma.member.findMany({
+      where: { clubId: { in: clubIds } },
+      select: { id: true, playerName: true },
+      orderBy: { playerName: 'asc' },
+    });
+    const marks = new Map(activity.attendances.flatMap((row) => (row.memberId ? [[row.memberId, row.late] as const] : [])));
+    const attended = members.filter((member) => marks.has(member.id));
+    const missed = members.filter((member) => !marks.has(member.id));
+    const late = attended.filter((member) => marks.get(member.id));
+    const clubList = activity.clubs.map((item) => item.club.name).join('、');
+    const statusText = activity.status === 'PUBLISHED' ? '已发布' : '已结束';
+    const startsAt = formatShanghai(activity.startsAt, 'minute');
+    const detail = this.rosterText(attended, missed, late, side);
+    const slots = {
+      title: activity.title,
+      clubList,
+      startsAt,
+      statusText,
+      attendedCount: String(attended.length),
+      missedCount: String(missed.length),
+      lateCount: String(late.length),
+      detail,
+    };
+    const must = [activity.title, String(attended.length), String(missed.length), String(late.length)];
+    return this.plain(tool === 'get_activity' ? 'activity-ready' : 'activity-roster', slots, must, basicMode, started, tool, 'OK', null);
+  }
+
+  private rosterText(
+    attended: Array<{ playerName: string }>,
+    missed: Array<{ playerName: string }>,
+    late: Array<{ playerName: string }>,
+    side: 'attended' | 'missed' | 'both',
+  ) {
+    const lateNames = new Set(late.map((member) => member.playerName));
+    const parts: string[] = [];
+    if (side !== 'missed') parts.push(`已签到：${this.nameList(attended.map((member) => lateNames.has(member.playerName) ? `${member.playerName}（迟到）` : member.playerName))}`);
+    if (side !== 'attended') parts.push(`未签到：${this.nameList(missed.map((member) => member.playerName))}`);
+    return parts.join('。');
+  }
+
+  private nameList(names: string[]) {
+    if (!names.length) return '没有人';
+    if (names.length <= 30) return names.join('、');
+    return `${names.slice(0, 30).join('、')}，还有 ${names.length - 30} 人`;
+  }
+
+  private async memberActivities(
+    user: AuthUser,
+    visible: VisibleClub[],
+    playerName: string,
+    clubName: string | undefined,
+    basicMode: boolean,
+    started: number,
+  ): Promise<Turn> {
+    return this.lookupMember(user, visible, playerName, clubName, 'all', basicMode, started).then(async (turn) => {
+      if (turn.scene !== 'member-ready') {
+        if (turn.pending?.intent === 'lookup') return { ...turn, pending: { ...turn.pending, follow: 'member_activities' as const } };
+        return turn;
+      }
+      const club = visible.find((item) => item.id === turn.clubId);
+      if (!club) return turn;
+      const member = await this.prisma.member.findFirst({
+        where: { clubId: club.id, playerName: turn.slots.playerName || playerName },
+        select: { id: true, clubId: true, playerName: true },
+      });
+      if (!member) return turn;
+      return this.speakMemberActivities(user, member, basicMode, started);
+    });
+  }
+
+  private async speakMemberActivities(
+    user: AuthUser,
+    member: { id: string; clubId: string; playerName: string },
+    basicMode: boolean,
+    started: number,
+  ): Promise<Turn> {
+    const [attended, missed] = await Promise.all([
+        this.prisma.activityAttendance.findMany({
+          where: { memberId: member.id, activity: this.access.activityWhere(user) },
+          include: { activity: { select: { title: true, startsAt: true } } },
+          orderBy: { activity: { startsAt: 'desc' } },
+        }),
+        this.prisma.activity.findMany({
+          where: {
+            AND: [
+              this.access.activityWhere(user),
+              { clubs: { some: { clubId: member.clubId } } },
+              { attendances: { none: { memberId: member.id } } },
+            ],
+          },
+          select: { title: true },
+          orderBy: { startsAt: 'desc' },
+        }),
+      ]);
+      if (!attended.length && !missed.length) {
+        return this.plain('member-activity-empty', { playerName: member.playerName }, [member.playerName, '没有纳入范围的活动'], basicMode, started, 'member_activities', 'OK', 'EMPTY');
+      }
+      const late = attended.filter((row) => row.late);
+      const detail = [
+        `已签到：${this.nameList(attended.map((row) => (row.late ? `${row.activity.title}（迟到）` : row.activity.title)))}`,
+        `未签到：${this.nameList(missed.map((row) => row.title))}`,
+      ].join('。');
+      return this.plain(
+        'member-activity-ready',
+        {
+          playerName: member.playerName,
+          attendedCount: String(attended.length),
+          missedCount: String(missed.length),
+          lateCount: String(late.length),
+          detail,
+        },
+        [member.playerName, String(attended.length), String(missed.length), String(late.length)],
+        basicMode,
+        started,
+        'member_activities',
+        'OK',
+        null,
+      );
   }
 
   private async presentMessages(userId: string, messages: Array<{ id: string; role: 'USER' | 'ASSISTANT'; content: string; createdAt: Date; exportId: string | null; userId: string }>): Promise<MessageView[]> {

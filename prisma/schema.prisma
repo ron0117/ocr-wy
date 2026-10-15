@@ -149,6 +149,7 @@ model Club {
   members       Member[]
   imports       ImportBatch[]
   activityClubs ActivityClub[]
+  attendances   ActivityAttendance[]
   roleClubs     RoleClub[]
   applications  Application[]
 
@@ -192,9 +193,10 @@ model Member {
   dataUpdatedAt  DateTime
   createdAt      DateTime @default(now())
 
-  club         Club              @relation(fields: [clubId], references: [id])
+  club         Club                 @relation(fields: [clubId], references: [id])
   wecomBinding WecomBinding?
   checkIns     ActivityCheckIn[]
+  attendances  ActivityAttendance[]
 
   @@unique([clubId, playerName])
   @@index([clubId, rank])
@@ -379,8 +381,9 @@ model WecomTeam {
 model Activity {
   id              String         @id @default(uuid()) @db.Uuid
   userId          String?        @db.Uuid
-  wecomTeamId     String         @db.Uuid
+  wecomTeamId     String?        @db.Uuid
   title           String
+  note            String?
   startsAt        DateTime
   remindAt        DateTime?
   status          ActivityStatus @default(PUBLISHED)
@@ -389,11 +392,12 @@ model Activity {
   remindClaimedAt DateTime?
 
   user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
-  wecomTeam     WecomTeam              @relation(fields: [wecomTeamId], references: [id])
+  wecomTeam     WecomTeam?             @relation(fields: [wecomTeamId], references: [id])
   clubs         ActivityClub[]
   recipients    ActivityRecipient[]
   checkIns      ActivityCheckIn[]
   notifications ActivityNotification[]
+  attendances   ActivityAttendance[]
 
   @@index([userId, publishedAt])
   @@index([status, remindAt])
@@ -410,6 +414,26 @@ model ActivityClub {
   @@id([activityId, clubId])
   @@index([clubId])
   @@map("activity_clubs")
+}
+
+model ActivityAttendance {
+  id         String   @id @default(uuid()) @db.Uuid
+  activityId String   @db.Uuid
+  memberId   String?  @db.Uuid
+  clubId     String   @db.Uuid
+  playerName String
+  late       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  member   Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  club     Club     @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  @@unique([activityId, memberId])
+  @@unique([activityId, clubId, playerName])
+  @@index([clubId, playerName])
+  @@index([memberId])
+  @@map("activity_attendances")
 }
 
 model ActivityRecipient {

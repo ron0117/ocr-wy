@@ -53,8 +53,9 @@ export class MembersController {
     @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
     @UploadedFiles() files: Express.Multer.File[] | undefined,
     @Body('rows') rows?: string,
+    @Body('renames') renames?: string,
   ) {
-    return this.members.confirmImport(user, clubId, files ?? [], rows);
+    return this.members.confirmImport(user, clubId, files ?? [], rows, renames);
   }
 
   @Get('members')
@@ -81,9 +82,9 @@ export class MembersController {
     return this.members.removeMany(user, dto.ids);
   }
 
-  @Delete('members/:id/wecom-binding')
-  unbind(@CurrentUser() user: AuthUser, @Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.members.unbind(user, id);
+  @Get('members/:id/activities')
+  activities(@CurrentUser() user: AuthUser, @Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.members.activities(user, id);
   }
 
   @Delete('members/:id')

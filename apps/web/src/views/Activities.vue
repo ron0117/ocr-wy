@@ -2,7 +2,7 @@
   <div class="page-head">
     <div>
       <h1>活动签到</h1>
-      <p>发布后，企业微信里的成员可以点开卡片绑定角色并签到。</p>
+      <p>发布后在列表里勾选参加和迟到的人。活动结束后仍可以改。</p>
     </div>
     <el-button type="primary" :icon="Plus" @click="openCreate">发布活动</el-button>
   </div>
@@ -16,26 +16,26 @@
       <el-table-column label="开始时间" min-width="170">
         <template #default="{ row }">{{ formatTime((row as ActivityItem).startsAt) }}</template>
       </el-table-column>
+      <el-table-column label="备注" min-width="160" show-overflow-tooltip>
+        <template #default="{ row }">{{ (row as ActivityItem).note }}</template>
+      </el-table-column>
       <el-table-column label="状态" width="100">
         <template #default="{ row }">{{ (row as ActivityItem).status === 'PUBLISHED' ? '已发布' : '已结束' }}</template>
       </el-table-column>
-      <el-table-column label="通知" min-width="140">
-        <template #default="{ row }">{{ noticeText(row as ActivityItem) }}</template>
-      </el-table-column>
-      <el-table-column label="操作" :width="narrow ? 112 : 280" :fixed="narrow ? false : 'right'">
+      <el-table-column label="操作" :width="narrow ? 112 : 240" :fixed="narrow ? false : 'right'">
         <template #default="{ row }">
           <div class="cell-ops">
-            <el-button link type="primary" @click="router.push(`/activities/${(row as ActivityItem).id}`)">签到情况</el-button>
-            <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="primary" @click="resend(row as ActivityItem, 'publish')">重发卡片</el-button>
-            <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="primary" @click="resend(row as ActivityItem, 'remind')">重发提醒</el-button>
+            <el-button link type="primary" @click="openAttendance(row as ActivityItem)">签到</el-button>
+            <el-button link type="primary" @click="openEdit(row as ActivityItem)">编辑</el-button>
             <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="danger" @click="finish(row as ActivityItem)">结束</el-button>
+            <el-button link type="danger" @click="remove(row as ActivityItem)">删除</el-button>
           </div>
         </template>
       </el-table-column>
     </el-table>
   </el-card>
-  <el-dialog v-model="creating" title="发布活动" width="560px" @closed="resetForm">
-    <el-alert v-if="configError" :title="configError" type="warning" show-icon :closable="false" style="margin-bottom: 12px" />
+
+  <el-dialog v-model="editing" :title="editId ? '编辑活动' : '发布活动'" width="560px" @closed="resetForm">
     <el-form label-position="top" @submit.prevent="submit">
       <el-form-item label="标题" required>
         <el-input v-model="form.title" maxlength="80" />
@@ -48,29 +48,35 @@
       <el-form-item label="开始时间" required>
         <el-date-picker v-model="form.startsAt" type="datetime" placeholder="选择开始时间" style="width: 100%" />
       </el-form-item>
-      <el-form-item label="提醒时间">
-        <el-date-picker v-model="form.remindAt" type="datetime" placeholder="可留空，不发提醒" style="width: 100%" />
-      </el-form-item>
-      <el-form-item label="部门">
-        <el-select v-model="form.partyIds" multiple filterable placeholder="可见范围内的部门" style="width: 100%">
-          <el-option v-for="item in audience.parties" :key="item.id" :label="item.name" :value="item.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="标签">
-        <el-select v-model="form.tagIds" multiple filterable placeholder="可见范围内的标签" style="width: 100%">
-          <el-option v-for="item in audience.tags" :key="item.id" :label="item.name" :value="item.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="成员">
-        <el-select v-model="form.userIds" multiple filterable placeholder="可见范围内的成员" style="width: 100%">
-          <el-option v-for="item in audience.users" :key="item.id" :label="item.name" :value="item.id" />
-        </el-select>
+      <el-form-item label="备注">
+        <el-input v-model="form.note" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="选填" />
       </el-form-item>
       <el-alert v-if="formError" :title="formError" type="error" show-icon :closable="false" />
     </el-form>
     <template #footer>
-      <el-button @click="creating = false">取消</el-button>
-      <el-button type="primary" :loading="saving" :disabled="Boolean(configError)" @click="submit">发布</el-button>
+      <el-button @click="editing = false">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="submit">{{ editId ? '保存' : '发布' }}</el-button>
+    </template>
+  </el-dialog>
+
+  <el-dialog v-model="marking" :title="markTitle" width="720px">
+    <el-table v-loading="markLoading" :data="marks" empty-text="所选俱乐部还没有人员">
+      <el-table-column prop="playerName" label="玩家名称" min-width="120" />
+      <el-table-column prop="clubName" label="俱乐部" min-width="120" />
+      <el-table-column label="签到" width="90">
+        <template #default="{ row }">
+          <el-checkbox v-model="row.attended" @change="onAttend(row as AttendanceRow)" />
+        </template>
+      </el-table-column>
+      <el-table-column label="迟到" width="90">
+        <template #default="{ row }">
+          <el-checkbox v-model="row.late" @change="onLate(row as AttendanceRow)" />
+        </template>
+      </el-table-column>
+    </el-table>
+    <template #footer>
+      <el-button @click="marking = false">取消</el-button>
+      <el-button type="primary" :loading="markSaving" @click="saveMarks">保存</el-button>
     </template>
   </el-dialog>
 </template>
@@ -78,42 +84,44 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { useNarrow } from '../composables/viewport';
-import { useRouter } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import {
+  activityAttendance,
   createActivity,
+  deleteActivity,
   endActivity,
   errorMessage,
   listActivities,
   listClubs,
-  resendActivity,
-  wecomAudience,
+  saveActivityAttendance,
+  updateActivity,
   type ActivityItem,
+  type AttendanceRow,
   type ClubItem,
-  type WecomAudience,
 } from '../api/client';
 
-const router = useRouter();
 const narrow = useNarrow();
 const clubs = ref<ClubItem[]>([]);
 const activities = ref<ActivityItem[]>([]);
-const audience = ref<WecomAudience>({ parties: [], tags: [], users: [] });
 const loading = ref(false);
 const saving = ref(false);
-const creating = ref(false);
+const editing = ref(false);
+const editId = ref('');
 const error = ref('');
 const formError = ref('');
-const configError = ref('');
 const form = reactive({
   title: '',
+  note: '',
   clubIds: [] as string[],
   startsAt: null as Date | null,
-  remindAt: null as Date | null,
-  partyIds: [] as string[],
-  tagIds: [] as string[],
-  userIds: [] as string[],
 });
+const marking = ref(false);
+const markTitle = ref('签到');
+const markId = ref('');
+const markLoading = ref(false);
+const markSaving = ref(false);
+const marks = ref<AttendanceRow[]>([]);
 
 function clubNames(row: ActivityItem) {
   return row.clubs.map((club) => club.name).join('、');
@@ -121,13 +129,6 @@ function clubNames(row: ActivityItem) {
 
 function formatTime(value: string) {
   return new Date(value).toLocaleString('zh-CN', { hour12: false });
-}
-
-function noticeText(row: ActivityItem) {
-  if (row.publishStatus === 'FAILED') return row.publishError || '发送失败';
-  if (row.publishError) return row.publishError;
-  if (row.publishStatus === 'SENT') return '已发送';
-  return '—';
 }
 
 async function load() {
@@ -145,24 +146,25 @@ async function load() {
 function resetForm() {
   formError.value = '';
   form.title = '';
+  form.note = '';
   form.clubIds = [];
   form.startsAt = null;
-  form.remindAt = null;
-  form.partyIds = [];
-  form.tagIds = [];
-  form.userIds = [];
+  editId.value = '';
 }
 
-async function openCreate() {
+function openCreate() {
   resetForm();
-  configError.value = '';
-  creating.value = true;
-  try {
-    audience.value = await wecomAudience();
-  } catch (cause) {
-    configError.value = errorMessage(cause, '企业微信未配置');
-    audience.value = { parties: [], tags: [], users: [] };
-  }
+  editing.value = true;
+}
+
+function openEdit(row: ActivityItem) {
+  resetForm();
+  editId.value = row.id;
+  form.title = row.title;
+  form.note = row.note ?? '';
+  form.clubIds = row.clubs.map((club) => club.id);
+  form.startsAt = new Date(row.startsAt);
+  editing.value = true;
 }
 
 async function submit() {
@@ -178,34 +180,68 @@ async function submit() {
     formError.value = '请选择开始时间';
     return;
   }
-  if (form.partyIds.length + form.tagIds.length + form.userIds.length === 0) {
-    formError.value = '请选择部门、标签或成员';
-    return;
-  }
   saving.value = true;
   formError.value = '';
+  const payload = {
+    title: form.title.trim(),
+    note: form.note.trim() || null,
+    clubIds: form.clubIds,
+    startsAt: form.startsAt.toISOString(),
+  };
   try {
-    await createActivity({
-      title: form.title.trim(),
-      clubIds: form.clubIds,
-      startsAt: form.startsAt.toISOString(),
-      remindAt: form.remindAt ? form.remindAt.toISOString() : null,
-      partyIds: form.partyIds,
-      tagIds: form.tagIds,
-      userIds: form.userIds,
-    });
-    creating.value = false;
+    if (editId.value) await updateActivity(editId.value, payload);
+    else await createActivity(payload);
+    editing.value = false;
     await load();
   } catch (cause) {
-    formError.value = errorMessage(cause, '发布失败');
+    formError.value = errorMessage(cause, editId.value ? '保存失败' : '发布失败');
   } finally {
     saving.value = false;
   }
 }
 
+async function openAttendance(row: ActivityItem) {
+  markId.value = row.id;
+  markTitle.value = `签到 · ${row.title}`;
+  marking.value = true;
+  markLoading.value = true;
+  marks.value = [];
+  try {
+    marks.value = await activityAttendance(row.id);
+  } catch (cause) {
+    error.value = errorMessage(cause, '签到名单加载失败');
+    marking.value = false;
+  } finally {
+    markLoading.value = false;
+  }
+}
+
+function onAttend(row: AttendanceRow) {
+  if (!row.attended) row.late = false;
+}
+
+function onLate(row: AttendanceRow) {
+  if (row.late) row.attended = true;
+}
+
+async function saveMarks() {
+  markSaving.value = true;
+  try {
+    marks.value = await saveActivityAttendance(
+      markId.value,
+      marks.value.filter((row) => row.attended).map((row) => ({ memberId: row.id, late: row.late })),
+    );
+    marking.value = false;
+  } catch (cause) {
+    error.value = errorMessage(cause, '签到保存失败');
+  } finally {
+    markSaving.value = false;
+  }
+}
+
 async function finish(row: ActivityItem) {
   try {
-    await ElMessageBox.confirm(`结束「${row.title}」后不能再签到。`, '结束活动', { type: 'warning' });
+    await ElMessageBox.confirm(`结束「${row.title}」后仍可以补签到和改迟到。`, '结束活动', { type: 'warning' });
   } catch {
     return;
   }
@@ -218,13 +254,18 @@ async function finish(row: ActivityItem) {
   }
 }
 
-async function resend(row: ActivityItem, kind: 'publish' | 'remind') {
+async function remove(row: ActivityItem) {
+  try {
+    await ElMessageBox.confirm(`删除「${row.title}」后，这场的参加记录也会去掉。`, '删除活动', { type: 'warning' });
+  } catch {
+    return;
+  }
   error.value = '';
   try {
-    await resendActivity(row.id, kind);
+    await deleteActivity(row.id);
     await load();
   } catch (cause) {
-    error.value = errorMessage(cause, '发送失败');
+    error.value = errorMessage(cause, '删除失败');
   }
 }
 

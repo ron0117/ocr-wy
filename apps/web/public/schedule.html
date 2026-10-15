@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>诡秘之主战略服筛选月活动表</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #1d3a56;
+      background: #eef6fc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef6fc;
+    }
+
+    .page {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      font-weight: 650;
+      color: #1d4f7a;
+    }
+
+    .block { margin-bottom: 16px; }
+
+    .alert {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 16px;
+      border: 1px solid #c6e2f7;
+      border-radius: 8px;
+      background: #f3f9fd;
+      color: #1d4f7a;
+      line-height: 1.6;
+    }
+
+    .alert-mark {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      margin-top: 3px;
+      border-radius: 50%;
+      background: #3a8dde;
+      color: #fff;
+      font-size: 12px;
+      line-height: 16px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #d5e6f4;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e3f0f9;
+      color: #1d4f7a;
+    }
+
+    .card-body { padding: 16px; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    .rules { min-width: 560px; }
+
+    th, td {
+      border: 1px solid #d5e6f4;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    th {
+      background: #f7fbfe;
+      color: #1d4f7a;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .rules th {
+      width: 120px;
+      white-space: nowrap;
+    }
+
+    .clock { font-weight: 700; }
+
+    .rule-notice {
+      margin-top: 4px;
+      color: #ad4e00;
+    }
+
+    .notice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 0 8px;
+      font-size: 12px;
+      line-height: 22px;
+      white-space: nowrap;
+    }
+
+    .tag-primary { color: #3a8dde; background: #ecf5ff; border-color: #d9ecff; }
+    .tag-success { color: #529b2e; background: #f0f9eb; border-color: #e1f3d8; }
+    .tag-warning { color: #b88230; background: #fdf6ec; border-color: #faecd8; }
+    .tag-danger { color: #c45656; background: #fef0f0; border-color: #fde2e2; }
+    .tag-info { color: #73767a; background: #f4f4f5; border-color: #e9e9eb; }
+
+    .day-focus {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 0 8px;
+      background: #f56c6c;
+      color: #fff;
+      font-size: 12px;
+      line-height: 22px;
+    }
+
+    .tag-plain {
+      color: #73767a;
+      background: #fff;
+      border-color: #e9e9eb;
+    }
+
+    tr.focus td { background: #ffd666; }
+    tr.focus:hover td { background: #ffc53d; }
+    tr.focus td:first-child { box-shadow: inset 4px 0 0 #d46b08; }
+    tr.focus .clock { color: #ad4e00; }
+
+    .notes {
+      margin: 0;
+      padding-left: 1.25em;
+      line-height: 1.7;
+    }
+
+    .notes li + li { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>诡秘之主战略服筛选月活动表</h1>
+
+    <div class="alert block">
+      <span class="alert-mark" aria-hidden="true">i</span>
+      <div>说明：以下内容根据用户提供的截图人工整理。截图未标明年份；时间按图片原文记录。个别被界面遮挡或截断的文字，结合表格重复格式补全，并在备注中说明。</div>
+    </div>
+
+    <section class="card block">
+      <div class="card-head"><strong>活动时间说明</strong></div>
+      <div class="card-body table-wrap">
+        <table class="rules">
+          <tbody>
+            <tr>
+              <th>高原竞逐</th>
+              <td>
+                <strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行。
+                <div class="rule-notice">提前半小时通知：<strong class="clock">11:30</strong> 报名，<strong class="clock">20:30</strong> 截止报名</div>
+              </td>
+            </tr>
+            <tr>
+              <th>终末猎杀</th>
+              <td>
+                高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong>。
+                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 高倍</div>
+              </td>
+            </tr>
+            <tr>
+              <th>跨服巨龙</th>
+              <td>
+                <strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行；周日场为 <strong class="clock">19:00</strong>--<strong class="clock">20:00</strong> 进行。
+                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 平日集合，<strong class="clock">18:30</strong> 周日集合</div>
+              </td>
+            </tr>
+            <tr>
+              <th>四方联赛</th>
+              <td>
+                <strong class="clock">20:00</strong> 开始。
+                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 开始</div>
+              </td>
+            </tr>
+            <tr>
+              <th>势力战</th>
+              <td>
+                <strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行。
+                <div class="rule-notice">提前半小时通知：<strong class="clock">11:30</strong> 报名，<strong class="clock">20:15</strong> 集合</div>
+              </td>
+            </tr>
+            <tr>
+              <th>附加赛</th>
+              <td>
+                <strong class="clock">20:00</strong> 开始。
+                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 开始</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card block">
+      <div class="card-head"><strong>10 月 14 日 — 10 月 18 日</strong></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>星期</th>
+              <th>活动内容</th>
+              <th>活动时间</th>
+              <th>提前半小时通知</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>10 月 14 日</td>
+              <td>星期三</td>
+              <td><span class="tag tag-warning">高原竞逐</span></td>
+              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+            <tr>
+              <td>10 月 15 日</td>
+              <td>星期四</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 16 日</td>
+              <td><span class="day-focus">星期五</span></td>
+              <td><span class="tag tag-success">跨服巨龙</span></td>
+              <td><strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行</td>
+              <td><strong class="clock">19:30</strong> 集合</td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 17 日</td>
+              <td><span class="day-focus">星期六</span></td>
+              <td><span class="tags"><span class="tag tag-primary">四方联赛</span><span class="tag tag-warning">高原竞逐</span></span></td>
+              <td>四方联赛：<strong class="clock">20:00</strong> 开始；高原竞逐：<strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 高原竞逐报名</div><div><strong class="clock">19:30</strong> 四方联赛</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 18 日</td>
+              <td><span class="day-focus">星期天</span></td>
+              <td><span class="tag tag-success">跨服巨龙</span></td>
+              <td><strong class="clock">19:00</strong>--<strong class="clock">20:00</strong> 进行</td>
+              <td><strong class="clock">18:30</strong> 集合</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card block">
+      <div class="card-head"><strong>第一周：非势力战周（10 月 19 日 — 10 月 25 日）</strong></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>星期</th>
+              <th>活动内容</th>
+              <th>活动时间</th>
+              <th>提前半小时通知</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>10 月 19 日</td>
+              <td>星期一</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>10 月 20 日</td>
+              <td>星期二</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>10 月 21 日</td>
+              <td>星期三</td>
+              <td><span class="tag tag-warning">高原竞逐</span></td>
+              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+            <tr>
+              <td>10 月 22 日</td>
+              <td>星期四</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 23 日</td>
+              <td><span class="day-focus">星期五</span></td>
+              <td><span class="tag tag-success">跨服巨龙</span></td>
+              <td><strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行</td>
+              <td><strong class="clock">19:30</strong> 集合</td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 24 日</td>
+              <td><span class="day-focus">星期六</span></td>
+              <td><span class="tags"><span class="tag tag-primary">四方联赛</span><span class="tag tag-danger">势力战</span></span></td>
+              <td>四方联赛：<strong class="clock">20:00</strong> 开始；势力战：<strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 势力战报名</div><div><strong class="clock">19:30</strong> 四方联赛</div><div><strong class="clock">20:15</strong> 势力战集合</div></div></td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 25 日</td>
+              <td><span class="day-focus">星期天</span></td>
+              <td><span class="tags"><span class="tag tag-success">跨服巨龙</span><span class="tag tag-info">四方联赛附加赛</span></span></td>
+              <td>跨服巨龙：<strong class="clock">19:00</strong>--<strong class="clock">20:00</strong>；附加赛：<strong class="clock">20:00</strong> 开始</td>
+              <td><div class="notice-list"><div><strong class="clock">18:30</strong> 跨服巨龙集合</div><div><strong class="clock">19:30</strong> 四方联赛附加赛</div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card block">
+      <div class="card-head"><strong>第二周：附加赛周（10 月 26 日 — 11 月 1 日）</strong></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>星期</th>
+              <th>活动内容</th>
+              <th>活动时间</th>
+              <th>提前半小时通知</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>10 月 26 日</td>
+              <td>星期一</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>10 月 27 日</td>
+              <td>星期二</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>10 月 28 日</td>
+              <td>星期三</td>
+              <td><span class="tag tag-warning">高原竞逐</span></td>
+              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+            <tr>
+              <td>10 月 29 日</td>
+              <td>星期四</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 30 日</td>
+              <td><span class="day-focus">星期五</span></td>
+              <td><span class="tag tag-success">跨服巨龙</span></td>
+              <td><strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行</td>
+              <td><strong class="clock">19:30</strong> 集合</td>
+            </tr>
+            <tr class="focus">
+              <td>10 月 31 日</td>
+              <td><span class="day-focus">星期六</span></td>
+              <td><span class="tags"><span class="tag tag-primary">四方联赛</span><span class="tag tag-warning">高原竞逐</span></span></td>
+              <td>四方联赛：<strong class="clock">20:00</strong> 开始；高原竞逐：<strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 高原竞逐报名</div><div><strong class="clock">19:30</strong> 四方联赛</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+            <tr class="focus">
+              <td>11 月 1 日</td>
+              <td><span class="day-focus">星期天</span></td>
+              <td><span class="tag tag-success">跨服巨龙</span></td>
+              <td><strong class="clock">19:00</strong>--<strong class="clock">20:00</strong> 进行</td>
+              <td><strong class="clock">18:30</strong> 集合</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card block">
+      <div class="card-head"><strong>第三周：非势力战周（11 月 2 日 — 11 月 8 日）</strong></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>星期</th>
+              <th>活动内容</th>
+              <th>活动时间</th>
+              <th>提前半小时通知</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>11 月 2 日</td>
+              <td>星期一</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>11 月 3 日</td>
+              <td>星期二</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>11 月 4 日</td>
+              <td>星期三</td>
+              <td><span class="tag tag-warning">高原竞逐</span></td>
+              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+            <tr>
+              <td>11 月 5 日</td>
+              <td>星期四</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr class="focus">
+              <td>11 月 6 日</td>
+              <td><span class="day-focus">星期五</span></td>
+              <td><span class="tag tag-success">跨服巨龙</span></td>
+              <td><strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行</td>
+              <td><strong class="clock">19:30</strong> 集合</td>
+            </tr>
+            <tr class="focus">
+              <td>11 月 7 日</td>
+              <td><span class="day-focus">星期六</span></td>
+              <td><span class="tags"><span class="tag tag-primary">四方联赛</span><span class="tag tag-danger">势力战</span></span></td>
+              <td>四方联赛：<strong class="clock">20:00</strong> 开始；势力战：<strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 势力战报名</div><div><strong class="clock">19:30</strong> 四方联赛</div><div><strong class="clock">20:15</strong> 势力战集合</div></div></td>
+            </tr>
+            <tr class="focus">
+              <td>11 月 8 日</td>
+              <td><span class="day-focus">星期天</span></td>
+              <td><span class="tags"><span class="tag tag-success">跨服巨龙</span><span class="tag tag-info">四方联赛附加赛</span></span></td>
+              <td>跨服巨龙：<strong class="clock">19:00</strong>--<strong class="clock">20:00</strong>；附加赛：<strong class="clock">20:00</strong> 开始</td>
+              <td><div class="notice-list"><div><strong class="clock">18:30</strong> 跨服巨龙集合</div><div><strong class="clock">19:30</strong> 四方联赛附加赛</div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card block">
+      <div class="card-head">
+        <strong>第四周：附加赛周</strong>
+        <span class="tag tag-plain">截图可见部分</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>星期</th>
+              <th>活动内容</th>
+              <th>活动时间</th>
+              <th>提前半小时通知</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>11 月 9 日</td>
+              <td>星期一</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>11 月 10 日</td>
+              <td>星期二</td>
+              <td><span class="tag tag-danger">终末猎杀</span></td>
+              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
+              <td><strong class="clock">19:30</strong> 高倍</td>
+            </tr>
+            <tr>
+              <td>11 月 11 日</td>
+              <td>星期三</td>
+              <td><span class="tag tag-warning">高原竞逐</span></td>
+              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
+              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><strong>备注</strong></div>
+      <div class="card-body">
+        <ol class="notes">
+          <li>截图中的日期没有标注年份，因此本文未自行补充年份。</li>
+          <li>截图右侧部分区域被短视频界面元素遮挡，但重复出现的活动时间格式较清楚；按相同活动的重复排期整理。</li>
+          <li>第四周只整理截图中可见的日期，不推测截图下方未显示的活动。</li>
+          <li>通知时间按开始时间提前 30 分钟计算：报名取报名开始，集合取进行开始，高倍取高倍开始，开赛取开始时间。高原竞逐的报名截止按 20:30 通知。周五、周六、周日整行已标出。</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

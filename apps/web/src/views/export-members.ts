@@ -1,8 +1,8 @@
 import ExcelJS from 'exceljs';
 import type { MemberItem } from '../api/client';
 
-const COLUMNS = ['排名', '玩家名称', '俱乐部名称', '等级', '途径', '非凡评分', '风尚度', '周活跃', '入会时间', '是否绑定通知'] as const;
-const WIDTHS = [10, 18, 16, 10, 14, 18, 12, 12, 14, 16];
+const COLUMNS = ['排名', '玩家名称', '俱乐部名称', '等级', '途径', '非凡评分', '风尚度', '周活跃', '入会时间'] as const;
+const WIDTHS = [10, 18, 16, 10, 14, 18, 12, 12, 14];
 const LAST_COL = COLUMNS.length;
 
 const thin = { style: 'thin' as const, color: { argb: 'FFD5DDE8' } };
@@ -99,7 +99,6 @@ function rowValues(row: MemberItem, index: number): Array<string | number> {
     row.fashion ?? '',
     row.weeklyActivity ?? '',
     row.joinedText ?? '',
-    row.notifyBound ? '已绑定' : '未绑定',
   ];
 }
 
@@ -114,9 +113,6 @@ function cellFont(column: number, row: MemberItem): Partial<ExcelJS.Font> {
   const base = { name: '微软雅黑', size: 11, color: { argb: 'FF243140' } };
   if (column === 5 && row.scoreChange) {
     return { ...base, color: { argb: row.scoreChange.direction === 'up' ? 'FF1F7A4D' : 'FFC45656' } };
-  }
-  if (column === 9) {
-    return { ...base, color: { argb: row.notifyBound ? 'FF1F7A4D' : 'FF8A94A6' } };
   }
   return base;
 }

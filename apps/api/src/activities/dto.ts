@@ -1,6 +1,7 @@
-import { ArrayMinSize, IsArray, IsIn, IsISO8601, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
+import { ArrayMinSize, IsArray, IsBoolean, IsISO8601, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateActivityDto {
+export class ActivityFieldsDto {
   @IsString({ message: '请填写活动标题' })
   @MaxLength(80, { message: '活动标题过长' })
   title!: string;
@@ -14,35 +15,23 @@ export class CreateActivityDto {
   startsAt!: string;
 
   @IsOptional()
-  @ValidateIf((_, value) => value !== null && value !== '')
-  @IsISO8601({}, { message: '提醒时间不正确' })
-  remindAt?: string | null;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true, message: '部门不正确' })
-  @MaxLength(64, { each: true, message: '部门不正确' })
-  partyIds?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true, message: '标签不正确' })
-  @MaxLength(64, { each: true, message: '标签不正确' })
-  tagIds?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true, message: '成员不正确' })
-  @MaxLength(64, { each: true, message: '成员不正确' })
-  userIds?: string[];
+  @IsString({ message: '备注不正确' })
+  @MaxLength(500, { message: '备注过长' })
+  note?: string | null;
 }
 
-export class NotifyActivityDto {
-  @IsIn(['publish', 'remind'], { message: '发送类型不正确' })
-  kind!: 'publish' | 'remind';
-}
-
-export class BindMemberDto {
-  @IsUUID('4', { message: '请选择角色' })
+export class AttendanceMarkDto {
+  @IsUUID('4', { message: '人员不正确' })
   memberId!: string;
+
+  @IsOptional()
+  @IsBoolean({ message: '迟到不正确' })
+  late?: boolean;
+}
+
+export class SaveAttendanceDto {
+  @IsArray({ message: '请提交签到名单' })
+  @ValidateNested({ each: true })
+  @Type(() => AttendanceMarkDto)
+  marks!: AttendanceMarkDto[];
 }

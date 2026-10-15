@@ -1,17 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AppShell from './components/AppShell.vue';
 import { firstMenuPath, useAuth } from './composables/auth';
-import ActivityDetailView from './views/ActivityDetail.vue';
 import ApplicationsView from './views/Applications.vue';
 import ApplyView from './views/Apply.vue';
 import ActivitiesView from './views/Activities.vue';
 import AccountsView from './views/Accounts.vue';
 import ClubsView from './views/Clubs.vue';
 import ImportMembersView from './views/ImportMembers.vue';
+import HomeView from './views/Home.vue';
 import LoginView from './views/Login.vue';
 import MembersView from './views/Members.vue';
-import NoMenuView from './views/NoMenu.vue';
-import PlayerActivityView from './views/PlayerActivity.vue';
 import RolesView from './views/Roles.vue';
 
 export const router = createRouter({
@@ -20,17 +18,15 @@ export const router = createRouter({
     { path: '/login', component: LoginView, meta: { public: true } },
     { path: '/apply', component: ApplyView, meta: { public: true } },
     { path: '/register', redirect: '/login' },
-    { path: '/a/:id', component: PlayerActivityView, meta: { public: true } },
     {
       path: '/',
       component: AppShell,
       children: [
-        { path: '', component: NoMenuView },
+        { path: '', component: HomeView },
         { path: 'clubs', component: ClubsView, meta: { menu: 'clubs' } },
         { path: 'imports', component: ImportMembersView, meta: { menu: 'imports' } },
         { path: 'members', component: MembersView, meta: { menu: 'members' } },
         { path: 'activities', component: ActivitiesView, meta: { menu: 'activities' } },
-        { path: 'activities/:id', component: ActivityDetailView, meta: { menu: 'activities' } },
         { path: 'applications', component: ApplicationsView, meta: { menu: 'applications' } },
         { path: 'accounts', component: AccountsView, meta: { menu: 'accounts' } },
         { path: 'roles', component: RolesView, meta: { menu: 'roles' } },
@@ -55,7 +51,7 @@ router.beforeEach(async (to) => {
         auth.clear();
         return true;
       }
-      return firstMenuPath(auth.state.menus) ?? '/';
+      return '/';
     }
     return true;
   }
@@ -72,6 +68,7 @@ router.beforeEach(async (to) => {
     if (allowed.has(required)) return true;
     return firstMenuPath(auth.state.menus) ?? '/';
   }
+  if (to.path === '/') return true;
   const next = firstMenuPath(auth.state.menus);
   if (next && to.path !== next) return next;
   return true;

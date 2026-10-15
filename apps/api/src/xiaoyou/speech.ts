@@ -3,7 +3,16 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const FALLBACK: Record<string, string> = {
-  help: '管理员，小忧现在会这些：看看你能管哪些俱乐部、问一家有多少人、何时更新、查某个人的某项或全部信息、导出人员表。比如：导出某某俱乐部人员名单，或查张三的等级。',
+  help: '管理员，小忧现在会这些：看看你能管哪些俱乐部、问一家有多少人、何时更新、查某个人的某项或全部信息、导出人员表、查看活动、查看一场的出席、查看某人参加过和没参加的活动。比如：导出某某俱乐部人员名单，或问张三参加了哪些活动。绑定状态已经不再提供。',
+  'activity-list': '管理员，小忧看到这些活动：{activityList}。',
+  'activity-empty': '管理员，小忧看过了，现在没有这样的活动。',
+  'activity-ready': '管理员，「{title}」在{clubList}，开始时间是 {startsAt}，状态是{statusText}。已签到 {attendedCount} 人，未签到 {missedCount} 人，迟到 {lateCount} 人。',
+  'activity-choice': '管理员，小忧找到这些活动：{activityList}。说一个名字或序号，小忧再去看。',
+  'activity-missing': '管理员，小忧没找到这场活动。说清楚标题，小忧再找。',
+  'activity-roster': '管理员，「{title}」已签到 {attendedCount} 人，未签到 {missedCount} 人，迟到 {lateCount} 人。{detail}',
+  'member-activity-ready': '管理员，「{playerName}」已签到 {attendedCount} 场，未签到 {missedCount} 场，迟到 {lateCount} 场。{detail}',
+  'member-activity-empty': '管理员，「{playerName}」没有纳入范围的活动。',
+  'activity-no-menu': '管理员，小忧还不能帮你查活动。这个账号没有「活动签到」的权限。',
   'no-menu': '管理员，小忧还不能帮你查人员和导出。这个账号没有「人员列表」的权限。',
   'list-clubs': '管理员，小忧能帮你看到这些：{clubList}。',
   'list-empty': '管理员，小忧看过了，你现在还没有可访问的俱乐部。',
@@ -30,8 +39,8 @@ const FALLBACK: Record<string, string> = {
 
 const INTENT_FALLBACK = `你只把管理员的一句话收成 JSON，不要写回复。
 只能返回 tool、可选的 clubName、playerName 和 field。
-tool 只能是 list_clubs、find_club、get_club_summary、export_club_members_excel、lookup_member、answer_help。
-查某一个玩家时用 lookup_member。`;
+tool 只能是 list_clubs、find_club、get_club_summary、export_club_members_excel、lookup_member、list_activities、get_activity、activity_roster、member_activities、answer_help。
+查某一个玩家时用 lookup_member。问活动用 list_activities、get_activity、activity_roster 或 member_activities。问绑定用 answer_help。`;
 
 @Injectable()
 export class SpeechBook implements OnModuleInit {

@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@ocr/shared-types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ActivitiesService } from './activities.service';
-import { CreateActivityDto, NotifyActivityDto } from './dto';
+import { ActivityFieldsDto, SaveAttendanceDto } from './dto';
 
 @Controller('activities')
 @UseGuards(JwtAuthGuard)
@@ -11,7 +11,7 @@ export class ActivitiesController {
   constructor(private readonly activities: ActivitiesService) {}
 
   @Post()
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateActivityDto) {
+  create(@CurrentUser() user: AuthUser, @Body() dto: ActivityFieldsDto) {
     return this.activities.create(user, dto);
   }
 
@@ -20,9 +20,18 @@ export class ActivitiesController {
     return this.activities.list(user);
   }
 
-  @Get(':id')
-  get(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
-    return this.activities.get(user, id);
+  @Get(':id/attendance')
+  attendance(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.activities.attendance(user, id);
+  }
+
+  @Put(':id/attendance')
+  saveAttendance(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SaveAttendanceDto,
+  ) {
+    return this.activities.saveAttendance(user, id, dto);
   }
 
   @Post(':id/end')
@@ -30,17 +39,22 @@ export class ActivitiesController {
     return this.activities.end(user, id);
   }
 
-  @Get(':id/check-ins')
-  checkIns(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
-    return this.activities.checkIns(user, id);
-  }
-
-  @Post(':id/notifications')
-  notify(
+  @Patch(':id')
+  update(
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: NotifyActivityDto,
+    @Body() dto: ActivityFieldsDto,
   ) {
-    return this.activities.notify(user, id, dto);
+    return this.activities.update(user, id, dto);
+  }
+
+  @Delete(':id')
+  remove(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.activities.remove(user, id);
+  }
+
+  @Get(':id')
+  get(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.activities.get(user, id);
   }
 }

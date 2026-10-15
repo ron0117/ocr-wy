@@ -82,8 +82,21 @@
     </el-table>
     <div class="form-actions" style="margin-top: 16px">
       <el-button :disabled="confirming" @click="cancelReview">取消</el-button>
-      <el-button type="primary" :loading="confirming" @click="confirm">确认导入</el-button>
+      <el-button type="primary" :loading="confirming" @click="confirm()">确认导入</el-button>
     </div>
+    <el-dialog v-model="renaming" title="确认改名" width="640px">
+      <p>这些有活动记录的人这次名单里没有了。如果是改名，选对应的新名称；不选就会按离开处理，活动记录先留着。</p>
+      <div v-for="row in renameRows" :key="row.memberId" class="rename-row">
+        <span>{{ row.playerName }}（{{ row.attendanceCount }} 场）</span>
+        <el-select v-model="row.target" clearable placeholder="不是改名" style="width: 220px">
+          <el-option v-for="name in renameArriving" :key="name" :label="name" :value="name" />
+        </el-select>
+      </div>
+      <template #footer>
+        <el-button @click="renaming = false">取消</el-button>
+        <el-button type="primary" :loading="confirming" @click="confirmRenames">确认导入</el-button>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -93,7 +106,7 @@ import { useNarrow } from '../composables/viewport';
 import { ElMessage } from 'element-plus';
 import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import { confirmMembers, errorMessage, listClubs, previewMembers, type ClubItem, type ImportMemberRow } from '../api/client';
+import { confirmMembers, errorMessage, listClubs, previewMembers, renamePrompt, type ClubItem, type ImportMemberRow } from '../api/client';
 import { compressForVision } from './compress-image';
 
 interface DraftRow {
@@ -117,6 +130,9 @@ const compressing = ref(false);
 const recognizing = ref(false);
 const confirming = ref(false);
 const reviewing = ref(false);
+const renaming = ref(false);
+const renameArriving = ref<string[]>([]);
+const renameRows = ref<Array<{ memberId: string; playerName: string; attendanceCount: number; target: string }>>([]);
 let draftKey = 0;
 let compressJobs = 0;
 
@@ -261,7 +277,7 @@ function confirmPayload(): ImportMemberRow[] | null {
   return rows;
 }
 
-async function confirm() {
+async function confirm(renames?: Array<{ memberId: string; playerName: string }>) {
   if (!clubId.value) {
     ElMessage.error('请先选择俱乐部');
     return;
@@ -287,15 +303,33 @@ async function confirm() {
   }
   confirming.value = true;
   try {
-    const result = await confirmMembers(clubId.value, files, rows);
+    const result = await confirmMembers(clubId.value, files, rows, renames);
     fileList.value = [];
     drafts.value = [];
     reviewing.value = false;
+    renaming.value = false;
     ElMessage.success(`已导入 ${result.imageCount} 张图片，写入 ${result.rowCount} 条人员`);
   } catch (cause) {
+    const prompt = renamePrompt(cause);
+    if (prompt && !renames) {
+      renameArriving.value = prompt.arriving;
+      renameRows.value = prompt.missing.map((row) => ({ ...row, target: '' }));
+      renaming.value = true;
+      return;
+    }
     ElMessage.error(errorMessage(cause, '导入失败'));
   } finally {
     confirming.value = false;
   }
+}
+
+function confirmRenames() {
+  const chosen = renameRows.value.filter((row) => row.target);
+  const names = chosen.map((row) => row.target);
+  if (new Set(names).size !== names.length) {
+    ElMessage.error('一个新名称只能对应一个旧名');
+    return;
+  }
+  void confirm(chosen.map((row) => ({ memberId: row.memberId, playerName: row.target })));
 }
 </script>

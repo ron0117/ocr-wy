@@ -7,7 +7,6 @@ export type MemberField =
   | 'weeklyActivity'
   | 'joined'
   | 'updated'
-  | 'binding'
   | 'all';
 
 export interface MemberSnapshot {
@@ -21,7 +20,6 @@ export interface MemberSnapshot {
   weeklyActivity: number | null;
   joinedText: string | null;
   updatedText: string;
-  bound: boolean;
 }
 
 const ALL_FIELDS: Exclude<MemberField, 'all'>[] = [
@@ -33,14 +31,13 @@ const ALL_FIELDS: Exclude<MemberField, 'all'>[] = [
   'weeklyActivity',
   'joined',
   'updated',
-  'binding',
 ];
 
 const FIELD_TAIL = [
   '详细信息', '具体信息', '完整信息', '详细资料', '具体资料', '完整资料', '详细情况', '具体情况',
   '全部信息', '所有信息', '全部资料', '所有资料', '全部情况', '所有情况',
-  '非凡评分', '风尚度', '周活跃', '入会时间', '数据更新时间', '更新时间', '绑定状态',
-  '排名', '等级', '途径', '评分', '入会', '绑定', '信息', '资料', '情况',
+  '非凡评分', '风尚度', '周活跃',   '入会时间', '数据更新时间', '更新时间',
+  '排名', '等级', '途径', '评分', '入会', '信息', '资料', '情况',
 ].join('|');
 
 const FIELD_PATTERNS: Array<[RegExp, MemberField]> = [
@@ -50,7 +47,6 @@ const FIELD_PATTERNS: Array<[RegExp, MemberField]> = [
   [/周活跃/, 'weeklyActivity'],
   [/入会时间|入会/, 'joined'],
   [/数据更新时间|更新时间/, 'updated'],
-  [/绑定状态|企业微信/, 'binding'],
   [/排名/, 'rank'],
   [/等级/, 'level'],
   [/途径/, 'path'],
@@ -80,7 +76,7 @@ export function detectField(text: string): MemberField | null {
 export function planMemberLookup(text: string): { playerName: string; clubName?: string; field: MemberField } | null {
   const raw = text.trim();
   if (/(导出|下载|打包|excel|哪些俱乐部)/i.test(raw)) return null;
-  const aboutPerson = /「[^」]{1,40}」|(?:查|找|看看|看一下|问一下)|的(?:排名|等级|途径|非凡评分|评分|风尚度|周活跃|入会|绑定|信息|资料|情况|数据更新时间|更新时间)/.test(raw);
+  const aboutPerson = /「[^」]{1,40}」|(?:查|找|看看|看一下|问一下)|的(?:排名|等级|途径|非凡评分|评分|风尚度|周活跃|入会|信息|资料|情况|数据更新时间|更新时间)/.test(raw);
   if (!aboutPerson) return null;
   if (/多少人|几个人|人数|会长|基本信息/.test(raw)) return null;
   if (/什么时候更新/.test(raw) && !/的(?:数据)?更新时间/.test(raw)) return null;
@@ -111,8 +107,7 @@ function clause(member: MemberSnapshot, field: Exclude<MemberField, 'all'>): str
   if (field === 'fashion') return member.fashion == null ? '风尚度还没填' : `风尚度是 ${member.fashion}`;
   if (field === 'weeklyActivity') return member.weeklyActivity == null ? '周活跃还没填' : `周活跃是 ${member.weeklyActivity}`;
   if (field === 'joined') return member.joinedText?.trim() ? `入会时间是${member.joinedText.trim()}` : '入会时间还没填';
-  if (field === 'updated') return `数据更新时间是 ${member.updatedText}`;
-  return `企业微信角色绑定状态是${member.bound ? '已绑定' : '未绑定'}`;
+  return `数据更新时间是 ${member.updatedText}`;
 }
 
 function extractPlayer(raw: string): { playerName: string; clubName?: string } | null {

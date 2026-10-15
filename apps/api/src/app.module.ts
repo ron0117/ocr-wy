@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
 import { AccessModule } from './access/access.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { AccountsModule } from './accounts/accounts.module';
@@ -20,7 +19,6 @@ import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
       isGlobal: true,
       envFilePath: ['.env', '../../.env'],
     }),
-    ScheduleModule.forRoot(),
     PrismaModule,
     StorageModule,
     AuthModule,

@@ -6,12 +6,19 @@ export interface VisibleClub {
   leader: string | null;
 }
 
+export type ActivityStatusFilter = 'PUBLISHED' | 'ENDED';
+export type RosterSide = 'attended' | 'missed' | 'both';
+
 export type PlannedTool =
   | { tool: 'list_clubs' }
   | { tool: 'answer_help' }
   | { tool: 'export_club_members_excel'; clubName?: string; clubNames?: string[]; allMatching?: boolean }
   | { tool: 'get_club_summary'; clubName?: string }
-  | { tool: 'lookup_member'; playerName: string; clubName?: string; field: MemberField };
+  | { tool: 'lookup_member'; playerName: string; clubName?: string; field: MemberField }
+  | { tool: 'list_activities'; clubName?: string; status?: ActivityStatusFilter }
+  | { tool: 'get_activity'; title?: string; clubName?: string }
+  | { tool: 'activity_roster'; title?: string; clubName?: string; side: RosterSide }
+  | { tool: 'member_activities'; playerName: string; clubName?: string };
 
 export type ClubMatch =
   | { type: 'exact'; club: VisibleClub }
@@ -22,17 +29,24 @@ export type ClubMatch =
 export interface PendingState {
   kind: 'choose' | 'confirm';
   clubIds: string[];
-  intent: 'export' | 'summary' | 'lookup';
+  intent: 'export' | 'summary' | 'lookup' | 'activity';
   playerName?: string;
   playerNames?: string[];
   field?: MemberField;
+  activityIds?: string[];
+  activityTool?: 'get_activity' | 'activity_roster';
+  rosterSide?: RosterSide;
+  follow?: 'member_activities';
 }
 
 export function planLocally(text: string): PlannedTool {
   const raw = text.trim();
+  if (/绑定状态|企业微信/.test(raw)) return { tool: 'answer_help' };
   if (/哪些俱乐部|能查看哪些|可以看哪些|我能看哪些|有哪些俱乐部/.test(raw)) {
     return { tool: 'list_clubs' };
   }
+  const activity = planActivity(raw);
+  if (activity) return activity;
   if (/导出|下载/.test(raw)) {
     return { tool: 'export_club_members_excel', clubName: extractClubPhrase(raw) };
   }
@@ -45,7 +59,7 @@ export function planLocally(text: string): PlannedTool {
 }
 
 export function isNewTopic(text: string): boolean {
-  return /导出|下载|打包|excel|名单|多少人|几个人|人数|哪些俱乐部|什么时候更新|更新时间|基本信息|你能做|你会什么|帮助|所有|全部|查|找|等级|途径|非凡|风尚|周活跃|入会|绑定/i.test(text);
+  return /导出|下载|打包|excel|名单|多少人|几个人|人数|哪些俱乐部|什么时候更新|更新时间|基本信息|你能做|你会什么|帮助|所有|全部|查|找|等级|途径|非凡|风尚|周活跃|入会|绑定|活动|签到|迟到/i.test(text);
 }
 
 export function planPackAll(text: string): { keyword?: string } | null {
@@ -132,6 +146,55 @@ export function formatClubList(clubs: VisibleClub[]): string {
   return `${labels.slice(0, -1).join('、')}和${labels[labels.length - 1]}`;
 }
 
+export function planActivity(raw: string): PlannedTool | null {
+  if (!/活动|签到|迟到/.test(raw) || /导出|下载/.test(raw)) return null;
+  const status = /已结束|结束了/.test(raw) ? 'ENDED' : /未结束|进行中|已发布/.test(raw) ? 'PUBLISHED' : undefined;
+  const side: RosterSide = /没参加|未参加|未签到|缺席|谁没/.test(raw)
+    ? 'missed'
+    : /谁参加|已签到|参加了谁|参加的人/.test(raw) && !/没参加|未参加/.test(raw)
+      ? 'attended'
+      : 'both';
+  if (/谁参加|谁没|谁未签到|谁迟到|参加了多少|多少人参加|迟到了多少|迟到的人/.test(raw)) {
+    return { tool: 'activity_roster', title: extractActivityTitle(raw), clubName: extractClubPhrase(raw), side: /迟到/.test(raw) && side === 'both' ? 'attended' : side };
+  }
+  if (/参加了哪些|参加过哪些|没参加哪些|未签到的活动|迟到了哪些|缺了哪些|的活跃度/.test(raw)) {
+    const playerName = extractActivityPlayer(raw);
+    if (!playerName) return { tool: 'answer_help' };
+    return { tool: 'member_activities', playerName, clubName: extractClubPhrase(raw) };
+  }
+  if (/有哪些活动|活动列表|哪些活动|还有哪些活动/.test(raw)) {
+    return { tool: 'list_activities', clubName: extractClubPhrase(raw), status };
+  }
+  if (/活动/.test(raw)) {
+    return { tool: 'get_activity', title: extractActivityTitle(raw), clubName: extractClubPhrase(raw) };
+  }
+  return null;
+}
+
+function extractActivityTitle(raw: string): string | undefined {
+  const quoted = raw.match(/「([^」]{1,40})」/u);
+  if (quoted && !/俱乐部/.test(quoted[1])) return quoted[1].trim();
+  const cleaned = raw
+    .replace(/谁参加了|谁没参加|谁未签到|谁迟到了|参加了多少人|有哪些活动|活动列表/gu, '')
+    .replace(/的?(?:开始时间|时间|出席|签到|迟到|人员|名单)/gu, '')
+    .replace(/^(?:小忧[，,\s]*|请|帮我|给我|查一下|看看|问一下)+/u, '')
+    .trim();
+  if (!cleaned || cleaned.length > 40 || /俱乐部|活动$/.test(cleaned)) return undefined;
+  return cleaned.replace(/活动$/u, '').trim() || undefined;
+}
+
+function extractActivityPlayer(raw: string): string | undefined {
+  const quoted = raw.match(/「([^」]{1,40})」/u);
+  if (quoted && !/俱乐部/.test(quoted[1])) return quoted[1].trim();
+  const cleaned = raw
+    .replace(/的?(?:参加了哪些活动|参加过哪些活动|没参加哪些活动|未签到的活动|迟到了哪些活动|缺了哪些活动|活跃度).*$/u, '')
+    .replace(/^(?:小忧[，,\s]*|请|帮我|给我|查一下|看看|问一下)+/u, '')
+    .replace(/俱乐部/gu, '')
+    .trim();
+  if (!cleaned || cleaned.length > 40) return undefined;
+  return cleaned;
+}
+
 export function readPending(value: unknown): PendingState | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const row = value as {
@@ -141,8 +204,25 @@ export function readPending(value: unknown): PendingState | null {
     playerName?: unknown;
     playerNames?: unknown;
     field?: unknown;
+    activityIds?: unknown;
+    activityTool?: unknown;
+    rosterSide?: unknown;
+    follow?: unknown;
   };
   if (row.kind !== 'choose' && row.kind !== 'confirm') return null;
+  if (row.intent === 'activity') {
+    if (!Array.isArray(row.activityIds) || row.activityIds.some((id) => typeof id !== 'string')) return null;
+    if (row.activityTool !== 'get_activity' && row.activityTool !== 'activity_roster') return null;
+    const rosterSide = row.rosterSide === 'attended' || row.rosterSide === 'missed' || row.rosterSide === 'both' ? row.rosterSide : 'both';
+    return {
+      kind: row.kind,
+      intent: 'activity',
+      clubIds: [],
+      activityIds: row.activityIds,
+      activityTool: row.activityTool,
+      rosterSide,
+    };
+  }
   if (row.intent !== 'export' && row.intent !== 'summary' && row.intent !== 'lookup') return null;
   if (!Array.isArray(row.clubIds) || row.clubIds.some((id) => typeof id !== 'string')) return null;
   if (row.intent !== 'lookup') return { kind: row.kind, intent: row.intent, clubIds: row.clubIds };
@@ -157,6 +237,7 @@ export function readPending(value: unknown): PendingState | null {
     playerName: row.playerName.trim(),
     playerNames,
     field: row.field,
+    ...(row.follow === 'member_activities' ? { follow: 'member_activities' as const } : {}),
   };
 }
 

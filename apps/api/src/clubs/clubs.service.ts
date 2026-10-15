@@ -103,7 +103,8 @@ export class ClubsService {
     const members = await this.prisma.member.count({ where: { clubId } });
     if (members > 0) throw new ConflictException('俱乐部已有人员，不能删除');
     const activities = await this.prisma.activityClub.count({ where: { clubId } });
-    if (activities > 0) throw new ConflictException('俱乐部已被活动使用，不能删除');
+    const attendances = await this.prisma.activityAttendance.count({ where: { clubId } });
+    if (activities > 0 || attendances > 0) throw new ConflictException('俱乐部已被活动使用，不能删除');
     await this.prisma.club.delete({ where: { id: clubId } });
     return { ok: true };
   }

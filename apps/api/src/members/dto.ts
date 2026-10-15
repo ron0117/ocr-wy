@@ -10,7 +10,6 @@ export const MEMBER_SORTS = [
   'fashion',
   'weeklyActivity',
   'joinedText',
-  'notifyBound',
 ] as const;
 
 export type MemberSort = (typeof MEMBER_SORTS)[number];
