@@ -80,10 +80,10 @@ powershell -ExecutionPolicy Bypass -File deploy/upload-and-deploy.ps1 `
 - 安装并启用 Docker Engine 与 Compose 插件；
 - 自动生成 `.env.production`，其中包含随机数据库密码、JWT 密钥和 OCR 密钥；
 - 构建镜像、执行 Prisma 迁移并启动全部服务；
-- 在启用了 firewalld 时开放 HTTP 端口。
+- 在启用了 firewalld 时开放 HTTP 和 HTTPS 端口；
+- 为 `wuyouclub.online` 申请 Let's Encrypt 证书，成功后把站点切到 443，并把 `WEB_ORIGIN` 改为 `https://wuyouclub.online`。
 
-部署完成后访问脚本输出的地址。使用域名时，编辑 `.env.production` 中的
-`WEB_ORIGIN`，然后再次运行同一脚本。云服务器还需要在厂商安全组中放行 TCP 80。
+部署完成后访问脚本输出的地址。证书校验仍走 80 端口，云服务器安全组需要同时放行 TCP 80 和 TCP 443。
 
 更新代码后仍运行同一命令，脚本会重新构建并滚动重建有变化的容器：
 
@@ -107,5 +107,5 @@ sudo docker compose --env-file .env.production -f docker-compose.prod.yml down
 如果需要演示账号，可把 `.env.production` 的 `SEED_DATABASE` 临时改为 `true`，
 执行一次部署后再改回 `false`。生产数据位于 Docker 命名卷
 `ocr-platform_postgres_data` 和 `ocr-platform_app_storage`，不要使用
-`docker compose down -v`，否则会删除这些数据。正式公网部署建议再配置 HTTPS
-反向代理或云负载均衡，并把 `WEB_ORIGIN` 改为对应的 `https://` 地址。
+`docker compose down -v`，否则会删除这些数据。域名解析到这台服务器后，
+重新运行部署脚本即可签出证书，站点通过 `https://wuyouclub.online` 访问。

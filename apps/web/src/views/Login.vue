@@ -18,6 +18,9 @@
         </el-form>
       </el-card>
     </div>
+    <footer class="beian">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026086959号-1</a>
+    </footer>
   </div>
 </template>
 
