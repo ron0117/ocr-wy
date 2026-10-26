@@ -16,4 +16,3 @@ packages/shared-types/dist
 .prisma
 coverage
 *.tsbuildinfo
-assets

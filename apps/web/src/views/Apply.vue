@@ -1,11 +1,11 @@
 <template>
-  <div class="auth-page">
-    <div class="apply-wrap">
+  <div class="public-page">
+    <div class="public-form-wrap">
       <el-card shadow="hover">
         <template #header>
           <strong>无忧大家庭欢迎你的加入~</strong>
         </template>
-        <el-form label-position="top" @submit.prevent="submit">
+        <el-form label-position="top" size="large" @submit.prevent="submit">
           <el-form-item label="玩家名称" required>
             <el-input v-model="gameName" maxlength="64" />
           </el-form-item>
@@ -107,8 +107,3 @@ async function submit() {
 }
 </script>
 
-<style scoped>
-.apply-wrap {
-  width: min(520px, 100%);
-}
-</style>

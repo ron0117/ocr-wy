@@ -1,9 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AppShell from './components/AppShell.vue';
+import { ALWAYS_VISIBLE_MENU_KEYS } from '@ocr/shared-types';
 import { firstMenuPath, useAuth } from './composables/auth';
 import ApplicationsView from './views/Applications.vue';
 import ApplyView from './views/Apply.vue';
 import ActivitiesView from './views/Activities.vue';
+import ActivityRegistrationsView from './views/ActivityRegistrations.vue';
+import ActivitySignupView from './views/ActivitySignup.vue';
 import AccountsView from './views/Accounts.vue';
 import ClubsView from './views/Clubs.vue';
 import ImportMembersView from './views/ImportMembers.vue';
@@ -17,6 +20,7 @@ export const router = createRouter({
   routes: [
     { path: '/login', component: LoginView, meta: { public: true } },
     { path: '/apply', component: ApplyView, meta: { public: true } },
+    { path: '/a/:activityId', component: ActivitySignupView, meta: { public: true } },
     { path: '/register', redirect: '/login' },
     {
       path: '/',
@@ -27,6 +31,7 @@ export const router = createRouter({
         { path: 'imports', component: ImportMembersView, meta: { menu: 'imports' } },
         { path: 'members', component: MembersView, meta: { menu: 'members' } },
         { path: 'activities', component: ActivitiesView, meta: { menu: 'activities' } },
+        { path: 'activity-registrations', component: ActivityRegistrationsView, meta: { menu: 'activity-registrations' } },
         { path: 'applications', component: ApplicationsView, meta: { menu: 'applications' } },
         { path: 'accounts', component: AccountsView, meta: { menu: 'accounts' } },
         { path: 'roles', component: RolesView, meta: { menu: 'roles' } },
@@ -65,7 +70,7 @@ router.beforeEach(async (to) => {
   const required = [...to.matched].reverse().map((record) => record.meta.menu).find(Boolean);
   const allowed = new Set((auth.state.menus ?? []).flatMap((group) => group.children.map((item) => item.key)));
   if (typeof required === 'string') {
-    if (allowed.has(required)) return true;
+    if (allowed.has(required) || (ALWAYS_VISIBLE_MENU_KEYS as readonly string[]).includes(required)) return true;
     return firstMenuPath(auth.state.menus) ?? '/';
   }
   if (to.path === '/') return true;

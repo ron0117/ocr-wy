@@ -2,7 +2,7 @@
   <div class="page-head">
     <div>
       <h1>活动签到</h1>
-      <p>发布后在列表里勾选参加和迟到的人。活动结束后仍可以改。</p>
+      <p>发布后在列表展示报名链接与二维码；玩家在公开页自助报名。</p>
     </div>
     <el-button type="primary" :icon="Plus" @click="openCreate">发布活动</el-button>
   </div>
@@ -22,10 +22,11 @@
       <el-table-column label="状态" width="100">
         <template #default="{ row }">{{ (row as ActivityItem).status === 'PUBLISHED' ? '已发布' : '已结束' }}</template>
       </el-table-column>
-      <el-table-column label="操作" :width="narrow ? 112 : 240" :fixed="narrow ? false : 'right'">
+      <el-table-column label="操作" :width="narrow ? 140 : 320" :fixed="narrow ? false : 'right'">
         <template #default="{ row }">
           <div class="cell-ops">
-            <el-button link type="primary" @click="openAttendance(row as ActivityItem)">签到</el-button>
+            <el-button link type="primary" @click="openShare(row as ActivityItem)">报名链接</el-button>
+            <el-button link type="primary" @click="goRegistrations(row as ActivityItem)">活动人员列表查看</el-button>
             <el-button link type="primary" @click="openEdit(row as ActivityItem)">编辑</el-button>
             <el-button v-if="(row as ActivityItem).status === 'PUBLISHED'" link type="danger" @click="finish(row as ActivityItem)">结束</el-button>
             <el-button link type="danger" @click="remove(row as ActivityItem)">删除</el-button>
@@ -59,48 +60,39 @@
     </template>
   </el-dialog>
 
-  <el-dialog v-model="marking" :title="markTitle" width="720px">
-    <el-table v-loading="markLoading" :data="marks" empty-text="所选俱乐部还没有人员">
-      <el-table-column prop="playerName" label="玩家名称" min-width="120" />
-      <el-table-column prop="clubName" label="俱乐部" min-width="120" />
-      <el-table-column label="签到" width="90">
-        <template #default="{ row }">
-          <el-checkbox v-model="row.attended" @change="onAttend(row as AttendanceRow)" />
-        </template>
-      </el-table-column>
-      <el-table-column label="迟到" width="90">
-        <template #default="{ row }">
-          <el-checkbox v-model="row.late" @change="onLate(row as AttendanceRow)" />
-        </template>
-      </el-table-column>
-    </el-table>
-    <template #footer>
-      <el-button @click="marking = false">取消</el-button>
-      <el-button type="primary" :loading="markSaving" @click="saveMarks">保存</el-button>
-    </template>
+  <el-dialog v-model="sharing" :title="shareTitle" width="420px" @closed="shareUrl = ''">
+    <p class="share-label">公开报名链接</p>
+    <el-input :model-value="shareUrl" readonly>
+      <template #append>
+        <el-button @click="copyUrl">复制</el-button>
+      </template>
+    </el-input>
+    <div v-if="qrDataUrl" class="qr-wrap">
+      <img :src="qrDataUrl" alt="报名二维码" width="200" height="200" />
+    </div>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useNarrow } from '../composables/viewport';
-import { ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
+import QRCode from 'qrcode';
 import {
-  activityAttendance,
   createActivity,
   deleteActivity,
   endActivity,
   errorMessage,
   listActivities,
   listClubs,
-  saveActivityAttendance,
   updateActivity,
   type ActivityItem,
-  type AttendanceRow,
   type ClubItem,
 } from '../api/client';
 
+const router = useRouter();
 const narrow = useNarrow();
 const clubs = ref<ClubItem[]>([]);
 const activities = ref<ActivityItem[]>([]);
@@ -116,12 +108,10 @@ const form = reactive({
   clubIds: [] as string[],
   startsAt: null as Date | null,
 });
-const marking = ref(false);
-const markTitle = ref('签到');
-const markId = ref('');
-const markLoading = ref(false);
-const markSaving = ref(false);
-const marks = ref<AttendanceRow[]>([]);
+const sharing = ref(false);
+const shareTitle = ref('');
+const shareUrl = ref('');
+const qrDataUrl = ref('');
 
 function clubNames(row: ActivityItem) {
   return row.clubs.map((club) => club.name).join('、');
@@ -129,6 +119,36 @@ function clubNames(row: ActivityItem) {
 
 function formatTime(value: string) {
   return new Date(value).toLocaleString('zh-CN', { hour12: false });
+}
+
+function publicUrlFor(row: ActivityItem) {
+  if (row.publicUrl) return row.publicUrl;
+  const origin = window.location.origin;
+  return `${origin}/a/${row.id}`;
+}
+
+async function openShare(row: ActivityItem) {
+  shareTitle.value = `报名 · ${row.title}`;
+  shareUrl.value = publicUrlFor(row);
+  sharing.value = true;
+  try {
+    qrDataUrl.value = await QRCode.toDataURL(shareUrl.value, { margin: 1, width: 200 });
+  } catch {
+    qrDataUrl.value = '';
+  }
+}
+
+async function copyUrl() {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value);
+    ElMessage.success('已复制链接');
+  } catch {
+    ElMessage.warning('复制失败，请手动选择链接');
+  }
+}
+
+function goRegistrations(row: ActivityItem) {
+  void router.push({ path: '/activity-registrations', query: { activityId: row.id } });
 }
 
 async function load() {
@@ -200,48 +220,9 @@ async function submit() {
   }
 }
 
-async function openAttendance(row: ActivityItem) {
-  markId.value = row.id;
-  markTitle.value = `签到 · ${row.title}`;
-  marking.value = true;
-  markLoading.value = true;
-  marks.value = [];
-  try {
-    marks.value = await activityAttendance(row.id);
-  } catch (cause) {
-    error.value = errorMessage(cause, '签到名单加载失败');
-    marking.value = false;
-  } finally {
-    markLoading.value = false;
-  }
-}
-
-function onAttend(row: AttendanceRow) {
-  if (!row.attended) row.late = false;
-}
-
-function onLate(row: AttendanceRow) {
-  if (row.late) row.attended = true;
-}
-
-async function saveMarks() {
-  markSaving.value = true;
-  try {
-    marks.value = await saveActivityAttendance(
-      markId.value,
-      marks.value.filter((row) => row.attended).map((row) => ({ memberId: row.id, late: row.late })),
-    );
-    marking.value = false;
-  } catch (cause) {
-    error.value = errorMessage(cause, '签到保存失败');
-  } finally {
-    markSaving.value = false;
-  }
-}
-
 async function finish(row: ActivityItem) {
   try {
-    await ElMessageBox.confirm(`结束「${row.title}」后仍可以补签到和改迟到。`, '结束活动', { type: 'warning' });
+    await ElMessageBox.confirm(`结束「${row.title}」后公开页将无法再报名。`, '结束活动', { type: 'warning' });
   } catch {
     return;
   }
@@ -256,7 +237,7 @@ async function finish(row: ActivityItem) {
 
 async function remove(row: ActivityItem) {
   try {
-    await ElMessageBox.confirm(`删除「${row.title}」后，这场的参加记录也会去掉。`, '删除活动', { type: 'warning' });
+    await ElMessageBox.confirm(`删除「${row.title}」后，该活动的报名记录也会去掉。`, '删除活动', { type: 'warning' });
   } catch {
     return;
   }
@@ -278,3 +259,15 @@ onMounted(async () => {
   await load();
 });
 </script>
+
+<style scoped>
+.share-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.qr-wrap {
+  margin-top: 16px;
+  text-align: center;
+}
+</style>

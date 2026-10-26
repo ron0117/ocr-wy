@@ -22,6 +22,10 @@ function firstValidationMessage(errors: ValidationError[]): string {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const http = app.getHttpAdapter().getInstance();
+  if (typeof http.set === 'function') {
+    http.set('trust proxy', 1);
+  }
   app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: (process.env.WEB_ORIGIN ?? 'http://localhost:5777')

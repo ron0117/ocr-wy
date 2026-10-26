@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import type { AuthUser } from '@ocr/shared-types';
 import { AccessService } from '../access/access.service';
+import { activityPublicUrl } from '../common/web-origin';
 import { PrismaService } from '../prisma/prisma.module';
-import { ActivityFieldsDto, SaveAttendanceDto } from './dto';
+import { ActivityFieldsDto } from './dto';
 
 const activityInclude = {
   clubs: { include: { club: { select: { id: true, name: true } } } },
@@ -14,6 +16,7 @@ export class ActivitiesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AccessService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(user: AuthUser, dto: ActivityFieldsDto) {
@@ -30,7 +33,7 @@ export class ActivitiesService {
       },
       include: activityInclude,
     });
-    return presentActivity(activity);
+    return this.present(activity);
   }
 
   async list(user: AuthUser) {
@@ -39,11 +42,11 @@ export class ActivitiesService {
       include: activityInclude,
       orderBy: { publishedAt: 'desc' },
     });
-    return rows.map(presentActivity);
+    return rows.map((row) => this.present(row));
   }
 
   async get(user: AuthUser, activityId: string) {
-    return presentActivity(await this.owned(user, activityId));
+    return this.present(await this.owned(user, activityId));
   }
 
   async update(user: AuthUser, activityId: string, dto: ActivityFieldsDto) {
@@ -63,7 +66,7 @@ export class ActivitiesService {
       },
       include: activityInclude,
     });
-    return presentActivity(updated);
+    return this.present(updated);
   }
 
   async remove(user: AuthUser, activityId: string) {
@@ -74,101 +77,29 @@ export class ActivitiesService {
 
   async end(user: AuthUser, activityId: string) {
     const activity = await this.owned(user, activityId);
-    if (activity.status === 'ENDED') return presentActivity(activity);
+    if (activity.status === 'ENDED') return this.present(activity);
     const updated = await this.prisma.activity.update({
       where: { id: activity.id },
       data: { status: 'ENDED', endedAt: new Date() },
       include: activityInclude,
     });
-    return presentActivity(updated);
+    return this.present(updated);
   }
 
-  async attendance(user: AuthUser, activityId: string) {
-    const activity = await this.owned(user, activityId);
-    const clubIds = activity.clubs.map((item) => item.clubId);
-    const [members, marks] = await Promise.all([
-      this.prisma.member.findMany({
-        where: { clubId: { in: clubIds } },
-        include: { club: { select: { name: true } } },
-        orderBy: [{ club: { name: 'asc' } }, { rank: 'asc' }],
-      }),
-      this.prisma.activityAttendance.findMany({
-        where: { activityId, memberId: { not: null } },
-        select: { memberId: true, late: true },
-      }),
-    ]);
-    const byMember = new Map(marks.map((item) => [item.memberId, item.late]));
-    return members.map((member) => ({
-      id: member.id,
-      playerName: member.playerName,
-      clubName: member.club.name,
-      attended: byMember.has(member.id),
-      late: byMember.get(member.id) ?? false,
-    }));
-  }
-
-  async saveAttendance(user: AuthUser, activityId: string, dto: SaveAttendanceDto) {
-    const activity = await this.owned(user, activityId);
-    const clubIds = activity.clubs.map((item) => item.clubId);
-    const roster = await this.prisma.member.findMany({
-      where: { clubId: { in: clubIds } },
-      select: { id: true, clubId: true, playerName: true },
-    });
-    const byId = new Map(roster.map((member) => [member.id, member]));
-    const desired = new Map<string, { late: boolean; clubId: string; playerName: string }>();
-    for (const mark of dto.marks) {
-      const member = byId.get(mark.memberId);
-      if (!member) throw new NotFoundException('人员不存在');
-      const previous = desired.get(member.id);
-      desired.set(member.id, {
-        late: Boolean(mark.late) || Boolean(previous?.late),
-        clubId: member.clubId,
-        playerName: member.playerName,
-      });
-    }
-    const rosterIds = roster.map((member) => member.id);
-    await this.prisma.$transaction(async (tx) => {
-      if (rosterIds.length > 0) {
-        await tx.activityAttendance.deleteMany({
-          where: {
-            activityId,
-            memberId: { in: rosterIds.filter((id) => !desired.has(id)) },
-          },
-        });
-      }
-      for (const [memberId, mark] of desired) {
-        const existing = await tx.activityAttendance.findFirst({
-          where: { activityId, memberId },
-        });
-        if (existing) {
-          await tx.activityAttendance.update({
-            where: { id: existing.id },
-            data: { late: mark.late, playerName: mark.playerName, clubId: mark.clubId },
-          });
-          continue;
-        }
-        const orphan = await tx.activityAttendance.findFirst({
-          where: { activityId, clubId: mark.clubId, playerName: mark.playerName, memberId: null },
-        });
-        if (orphan) {
-          await tx.activityAttendance.update({
-            where: { id: orphan.id },
-            data: { memberId, late: mark.late },
-          });
-          continue;
-        }
-        await tx.activityAttendance.create({
-          data: {
-            activityId,
-            memberId,
-            clubId: mark.clubId,
-            playerName: mark.playerName,
-            late: mark.late,
-          },
-        });
-      }
-    });
-    return this.attendance(user, activityId);
+  private present(activity: Prisma.ActivityGetPayload<{ include: typeof activityInclude }>) {
+    const origin = this.config.get<string>('WEB_ORIGIN');
+    return {
+      id: activity.id,
+      title: activity.title,
+      note: activity.note,
+      status: activity.status,
+      startsAt: activity.startsAt.toISOString(),
+      remindAt: activity.remindAt?.toISOString() ?? null,
+      publishedAt: activity.publishedAt.toISOString(),
+      endedAt: activity.endedAt?.toISOString() ?? null,
+      publicUrl: activityPublicUrl(origin, activity.id),
+      clubs: activity.clubs.map((item) => ({ id: item.club.id, name: item.club.name })),
+    };
   }
 
   private fields(dto: ActivityFieldsDto) {
@@ -197,18 +128,4 @@ export class ActivitiesService {
     if (!activity) throw new NotFoundException('活动不存在');
     return activity;
   }
-}
-
-function presentActivity(activity: Prisma.ActivityGetPayload<{ include: typeof activityInclude }>) {
-  return {
-    id: activity.id,
-    title: activity.title,
-    note: activity.note,
-    status: activity.status,
-    startsAt: activity.startsAt.toISOString(),
-    remindAt: activity.remindAt?.toISOString() ?? null,
-    publishedAt: activity.publishedAt.toISOString(),
-    endedAt: activity.endedAt?.toISOString() ?? null,
-    clubs: activity.clubs.map((item) => ({ id: item.club.id, name: item.club.name })),
-  };
 }

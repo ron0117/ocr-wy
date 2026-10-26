@@ -65,6 +65,40 @@ export interface PermissionMenu {
   children: PermissionMenuChild[];
 }
 
+export type RegistrationProfession =
+  | 'AUDIENCE'
+  | 'SUN'
+  | 'FOOL'
+  | 'WARRIOR'
+  | 'APPRENTICE'
+  | 'DIVINATION';
+
+export type RegistrationAttendanceStatus = 'NORMAL' | 'LATE' | 'ABSENT';
+
+export const REGISTRATION_PROFESSION_OPTIONS: ReadonlyArray<{ value: RegistrationProfession; label: string }> = [
+  { value: 'AUDIENCE', label: '观众' },
+  { value: 'SUN', label: '歌颂' },
+  { value: 'FOOL', label: '窥秘' },
+  { value: 'WARRIOR', label: '战士' },
+  { value: 'APPRENTICE', label: '学徒' },
+  { value: 'DIVINATION', label: '占卜' },
+];
+
+export const REGISTRATION_PROFESSION_LABEL: Record<RegistrationProfession, string> = Object.fromEntries(
+  REGISTRATION_PROFESSION_OPTIONS.map((item) => [item.value, item.label]),
+) as Record<RegistrationProfession, string>;
+
+export const REGISTRATION_STATUS_LABEL: Record<RegistrationAttendanceStatus, string> = {
+  NORMAL: '正常',
+  LATE: '迟到',
+  ABSENT: '未到',
+};
+
+/** 登录后始终出现在侧栏，不必在角色里勾选 */
+export const ALWAYS_VISIBLE_MENU_KEYS = ['activity-registrations'] as const;
+
+export type AlwaysVisibleMenuKey = (typeof ALWAYS_VISIBLE_MENU_KEYS)[number];
+
 export const MENU_CATALOG = [
   {
     key: 'club-management',
@@ -78,7 +112,10 @@ export const MENU_CATALOG = [
   {
     key: 'activity-management',
     title: '活动管理',
-    children: [{ key: 'activities', title: '活动签到', path: '/activities' }],
+    children: [
+      { key: 'activities', title: '活动签到', path: '/activities' },
+      { key: 'activity-registrations', title: '活动查看', path: '/activity-registrations' },
+    ],
   },
   {
     key: 'recruitment',
@@ -106,7 +143,7 @@ export function isMenuKey(value: string): value is MenuKey {
 }
 
 export function menusForKeys(keys: readonly string[]): PermissionMenu[] {
-  const allowed = new Set(keys);
+  const allowed = new Set([...keys, ...ALWAYS_VISIBLE_MENU_KEYS]);
   return MENU_CATALOG.map((group) => ({
     key: group.key,
     title: group.title,

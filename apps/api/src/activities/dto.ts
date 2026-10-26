@@ -1,5 +1,4 @@
-import { ArrayMinSize, IsArray, IsBoolean, IsISO8601, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { ArrayMinSize, IsArray, IsISO8601, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class ActivityFieldsDto {
   @IsString({ message: '请填写活动标题' })
@@ -18,20 +17,4 @@ export class ActivityFieldsDto {
   @IsString({ message: '备注不正确' })
   @MaxLength(500, { message: '备注过长' })
   note?: string | null;
-}
-
-export class AttendanceMarkDto {
-  @IsUUID('4', { message: '人员不正确' })
-  memberId!: string;
-
-  @IsOptional()
-  @IsBoolean({ message: '迟到不正确' })
-  late?: boolean;
-}
-
-export class SaveAttendanceDto {
-  @IsArray({ message: '请提交签到名单' })
-  @ValidateNested({ each: true })
-  @Type(() => AttendanceMarkDto)
-  marks!: AttendanceMarkDto[];
 }

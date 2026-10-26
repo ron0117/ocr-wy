@@ -53,9 +53,8 @@ export class MembersController {
     @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
     @UploadedFiles() files: Express.Multer.File[] | undefined,
     @Body('rows') rows?: string,
-    @Body('renames') renames?: string,
   ) {
-    return this.members.confirmImport(user, clubId, files ?? [], rows, renames);
+    return this.members.confirmImport(user, clubId, files ?? [], rows);
   }
 
   @Get('members')

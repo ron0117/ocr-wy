@@ -27,7 +27,7 @@
         <el-input v-model="name" maxlength="40" />
       </el-form-item>
       <el-form-item label="菜单" class="menu-field">
-        <div v-for="group in MENU_CATALOG" :key="group.key" class="menu-group">
+        <div v-for="group in assignableCatalog" :key="group.key" class="menu-group">
           <div class="menu-group-title">{{ group.title }}</div>
           <el-checkbox-group v-model="menuKeys">
             <el-checkbox v-for="item in group.children" :key="item.key" :value="item.key">
@@ -55,7 +55,12 @@
 import { onMounted, ref } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { MENU_CATALOG } from '@ocr/shared-types';
+import { ALWAYS_VISIBLE_MENU_KEYS, MENU_CATALOG } from '@ocr/shared-types';
+
+const assignableCatalog = MENU_CATALOG.map((group) => ({
+  ...group,
+  children: group.children.filter((item) => !(ALWAYS_VISIBLE_MENU_KEYS as readonly string[]).includes(item.key)),
+}));
 import {
   createRole,
   deleteRole,

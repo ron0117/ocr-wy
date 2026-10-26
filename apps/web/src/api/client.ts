@@ -1,5 +1,12 @@
 import axios from 'axios';
-import type { AuthUser, PermissionMenu, ProductRow, TaskStatus } from '@ocr/shared-types';
+import type {
+  AuthUser,
+  PermissionMenu,
+  ProductRow,
+  RegistrationAttendanceStatus,
+  RegistrationProfession,
+  TaskStatus,
+} from '@ocr/shared-types';
 
 export const api = axios.create({
   baseURL: '/api/v1',
@@ -278,6 +285,7 @@ export interface ActivityItem {
   remindAt: string | null;
   publishedAt: string;
   endedAt: string | null;
+  publicUrl?: string;
   clubs: Array<{ id: string; name: string }>;
 }
 
@@ -288,12 +296,36 @@ export interface ActivityInput {
   startsAt: string;
 }
 
-export interface AttendanceRow {
+export interface PublicActivitySummary {
   id: string;
-  playerName: string;
+  title: string;
+  startsAt: string;
+  status: 'PUBLISHED' | 'ENDED';
+  clubs: Array<{ id: string; name: string }>;
+}
+
+export interface RegistrationActivityOption {
+  id: string;
+  title: string;
+  startsAt: string;
+  status: 'PUBLISHED' | 'ENDED';
+  publishedAt: string;
+}
+
+export interface RegistrationRowItem {
+  id: string;
+  activityId: string;
+  clubId: string;
   clubName: string;
-  attended: boolean;
-  late: boolean;
+  playerName: string;
+  score: number;
+  profession: RegistrationProfession;
+  professionLabel: string;
+  attendanceStatus: RegistrationAttendanceStatus;
+  statusLabel: string;
+  submitIp: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export async function listActivities() {
@@ -320,17 +352,65 @@ export async function endActivity(activityId: string) {
   return data;
 }
 
-export async function activityAttendance(activityId: string) {
-  const { data } = await api.get<AttendanceRow[]>(`/activities/${activityId}/attendance`);
+export async function fetchPublicActivity(activityId: string) {
+  const { data } = await api.get<PublicActivitySummary>(`/public/activities/${activityId}`);
   return data;
 }
 
-export async function saveActivityAttendance(
+export async function submitPublicRegistration(
   activityId: string,
-  marks: Array<{ memberId: string; late: boolean }>,
+  payload: {
+    clubId: string;
+    playerName: string;
+    score: number;
+    profession: RegistrationProfession;
+  },
 ) {
-  const { data } = await api.put<AttendanceRow[]>(`/activities/${activityId}/attendance`, { marks });
+  const { data } = await api.post<RegistrationRowItem>(`/public/activities/${activityId}/registrations`, payload);
   return data;
+}
+
+export async function listRegistrationActivities() {
+  const { data } = await api.get<RegistrationActivityOption[]>('/activity-registrations/activities');
+  return data;
+}
+
+export async function listRegistrations(params: {
+  activityId: string;
+  clubId?: string;
+  sortBy?: 'playerName' | 'clubName' | 'score' | 'profession' | 'attendanceStatus' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}) {
+  const { data } = await api.get<{
+    activity: {
+      id: string;
+      title: string;
+      status: string;
+      startsAt: string;
+      publicUrl: string;
+      clubs: Array<{ id: string; name: string }>;
+    };
+    rows: RegistrationRowItem[];
+  }>('/activity-registrations', { params });
+  return data;
+}
+
+export async function patchRegistration(
+  id: string,
+  payload: Partial<{
+    clubId: string;
+    playerName: string;
+    score: number;
+    profession: RegistrationProfession;
+    attendanceStatus: RegistrationAttendanceStatus;
+  }>,
+) {
+  const { data } = await api.patch<RegistrationRowItem>(`/activity-registrations/${id}`, payload);
+  return data;
+}
+
+export async function deleteRegistration(id: string) {
+  await api.delete(`/activity-registrations/${id}`);
 }
 
 export async function login(email: string, password: string) {

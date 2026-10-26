@@ -1,9 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@ocr/shared-types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ActivitiesService } from './activities.service';
-import { ActivityFieldsDto, SaveAttendanceDto } from './dto';
+import { ActivityFieldsDto } from './dto';
 
 @Controller('activities')
 @UseGuards(JwtAuthGuard)
@@ -18,20 +18,6 @@ export class ActivitiesController {
   @Get()
   list(@CurrentUser() user: AuthUser) {
     return this.activities.list(user);
-  }
-
-  @Get(':id/attendance')
-  attendance(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
-    return this.activities.attendance(user, id);
-  }
-
-  @Put(':id/attendance')
-  saveAttendance(
-    @CurrentUser() user: AuthUser,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: SaveAttendanceDto,
-  ) {
-    return this.activities.saveAttendance(user, id, dto);
   }
 
   @Post(':id/end')

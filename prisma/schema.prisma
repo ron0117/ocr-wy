@@ -37,6 +37,21 @@ enum ActivityStatus {
   ENDED
 }
 
+enum RegistrationProfession {
+  AUDIENCE
+  SUN
+  FOOL
+  WARRIOR
+  APPRENTICE
+  DIVINATION
+}
+
+enum RegistrationAttendanceStatus {
+  NORMAL
+  LATE
+  ABSENT
+}
+
 enum RecipientKind {
   PARTY
   TAG
@@ -149,9 +164,10 @@ model Club {
   members       Member[]
   imports       ImportBatch[]
   activityClubs ActivityClub[]
-  attendances   ActivityAttendance[]
-  roleClubs     RoleClub[]
-  applications  Application[]
+  attendances          ActivityAttendance[]
+  activityRegistrations ActivityRegistration[]
+  roleClubs            RoleClub[]
+  applications         Application[]
 
   @@unique([userId, name])
   @@index([userId, createdAt])
@@ -398,10 +414,32 @@ model Activity {
   checkIns      ActivityCheckIn[]
   notifications ActivityNotification[]
   attendances   ActivityAttendance[]
+  registrations ActivityRegistration[]
 
   @@index([userId, publishedAt])
   @@index([status, remindAt])
   @@map("activities")
+}
+
+model ActivityRegistration {
+  id               String                       @id @default(uuid()) @db.Uuid
+  activityId       String                       @db.Uuid
+  clubId           String                       @db.Uuid
+  playerName       String
+  score            Int
+  profession       RegistrationProfession
+  attendanceStatus RegistrationAttendanceStatus @default(NORMAL)
+  submitIp         String
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  club     Club     @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  @@unique([activityId, clubId, playerName])
+  @@index([activityId, createdAt])
+  @@index([activityId, submitIp])
+  @@map("activity_registrations")
 }
 
 model ActivityClub {

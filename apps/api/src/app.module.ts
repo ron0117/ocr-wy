@@ -4,6 +4,7 @@ import { AccessModule } from './access/access.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { ActivityRegistrationsModule } from './activity-registrations/activity-registrations.module';
 import { AuthModule } from './auth/auth.module';
 import { ClubsModule } from './clubs/clubs.module';
 import { RolesModule } from './roles/roles.module';
@@ -28,6 +29,7 @@ import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
     ClubsModule,
     MembersModule,
     ActivitiesModule,
+    ActivityRegistrationsModule,
     ApplicationsModule,
     XiaoyouModule,
   ],
