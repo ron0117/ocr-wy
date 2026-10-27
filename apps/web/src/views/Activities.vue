@@ -60,15 +60,19 @@
     </template>
   </el-dialog>
 
-  <el-dialog v-model="sharing" :title="shareTitle" width="420px" @closed="shareUrl = ''">
+  <el-dialog v-model="sharing" :title="shareTitle" width="420px" @closed="resetShare">
     <p class="share-label">公开报名链接</p>
     <el-input :model-value="shareUrl" readonly>
       <template #append>
         <el-button @click="copyUrl">复制</el-button>
       </template>
     </el-input>
-    <div v-if="qrDataUrl" class="qr-wrap">
-      <img :src="qrDataUrl" alt="报名二维码" width="200" height="200" />
+    <div v-if="sharePosterUrl" class="qr-wrap">
+      <img class="share-poster" :src="sharePosterUrl" alt="活动报名分享图" />
+      <el-button type="primary" plain @click="downloadPoster">保存分享图</el-button>
+    </div>
+    <div v-else-if="shareLoading" class="qr-wrap">
+      <el-text type="info">正在生成分享图…</el-text>
     </div>
   </el-dialog>
 </template>
@@ -79,7 +83,7 @@ import { useRouter } from 'vue-router';
 import { useNarrow } from '../composables/viewport';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import QRCode from 'qrcode';
+import { buildActivitySharePoster, downloadDataUrl } from '../utils/activity-share-poster';
 import {
   createActivity,
   deleteActivity,
@@ -111,7 +115,10 @@ const form = reactive({
 const sharing = ref(false);
 const shareTitle = ref('');
 const shareUrl = ref('');
-const qrDataUrl = ref('');
+const sharePosterUrl = ref('');
+const shareLoading = ref(false);
+const shareActivityTitle = ref('');
+const shareStartsAt = ref('');
 
 function clubNames(row: ActivityItem) {
   return row.clubs.map((club) => club.name).join('、');
@@ -127,15 +134,40 @@ function publicUrlFor(row: ActivityItem) {
   return `${origin}/a/${row.id}`;
 }
 
+function resetShare() {
+  shareUrl.value = '';
+  sharePosterUrl.value = '';
+  shareLoading.value = false;
+  shareActivityTitle.value = '';
+  shareStartsAt.value = '';
+}
+
 async function openShare(row: ActivityItem) {
   shareTitle.value = `报名 · ${row.title}`;
   shareUrl.value = publicUrlFor(row);
+  shareActivityTitle.value = row.title;
+  shareStartsAt.value = row.startsAt;
+  sharePosterUrl.value = '';
+  shareLoading.value = true;
   sharing.value = true;
   try {
-    qrDataUrl.value = await QRCode.toDataURL(shareUrl.value, { margin: 1, width: 200 });
+    sharePosterUrl.value = await buildActivitySharePoster({
+      url: shareUrl.value,
+      title: row.title,
+      startsAt: row.startsAt,
+    });
   } catch {
-    qrDataUrl.value = '';
+    sharePosterUrl.value = '';
+    ElMessage.warning('分享图生成失败，请稍后重试');
+  } finally {
+    shareLoading.value = false;
   }
+}
+
+function downloadPoster() {
+  if (!sharePosterUrl.value) return;
+  const safe = shareActivityTitle.value.replace(/[\\/:*?"<>|]/g, '_').slice(0, 40) || '活动';
+  downloadDataUrl(sharePosterUrl.value, `报名_${safe}.png`);
 }
 
 async function copyUrl() {
@@ -269,5 +301,16 @@ onMounted(async () => {
 .qr-wrap {
   margin-top: 16px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.share-poster {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(29, 79, 122, 0.12);
 }
 </style>

@@ -36,9 +36,8 @@ export class ActivitiesService {
     return this.present(activity);
   }
 
-  async list(user: AuthUser) {
+  async list(_user: AuthUser) {
     const rows = await this.prisma.activity.findMany({
-      where: this.access.activityWhere(user),
       include: activityInclude,
       orderBy: { publishedAt: 'desc' },
     });
@@ -120,9 +119,9 @@ export class ActivitiesService {
     return clubs;
   }
 
-  private async owned(user: AuthUser, activityId: string) {
-    const activity = await this.prisma.activity.findFirst({
-      where: { id: activityId, AND: [this.access.activityWhere(user)] },
+  private async owned(_user: AuthUser, activityId: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
       include: activityInclude,
     });
     if (!activity) throw new NotFoundException('活动不存在');

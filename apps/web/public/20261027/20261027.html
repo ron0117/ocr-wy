@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>无忧周报 · 无忧俱乐部</title>
+  <style>
+    body {
+      margin: 0;
+      background: #ffffff;
+      -webkit-text-size-adjust: 100%;
+    }
+    #article-root {
+      max-width: 677px;
+      margin: 0 auto;
+      padding: 0 10px 36px;
+      box-sizing: border-box;
+      background-color: #f4ede3;
+      background-image: url("https://mmbiz.qpic.cn/mmbiz_png/omtkB5Q4XALKDfydOKRVLfanrwyP9ibYu8390KibczdAWrhW5mK0gFqz5L0Pk5e6qstmNJWDWn2Mj61D8stwcNuYo0mydW8CXMCtyEVNwmfPg/640?wx_fmt=png");
+      background-repeat: repeat-y;
+      background-size: 100% auto;
+      background-position: 0 0;
+      font-size: 15px;
+      letter-spacing: 1px;
+      line-height: 2;
+      color: #3e3e3e;
+      text-align: justify;
+    }
+    .content-pad {
+      padding-left: 7px;
+      padding-right: 7px;
+      box-sizing: border-box;
+    }
+    .article-title-banner {
+      text-align: center;
+      margin: 10px 0 6px;
+      padding: 0 3px;
+    }
+    .article-title-main {
+      margin: 0 0 4px;
+      font-size: 19px;
+      font-weight: 700;
+      color: #3e3e3e;
+      line-height: 1.55;
+      letter-spacing: 1px;
+    }
+    .article-title-sub {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #3e3e3e;
+      line-height: 1.65;
+      letter-spacing: 1px;
+    }
+    .hl-official {
+      color: #ff8124;
+      font-weight: 600;
+    }
+    .fun-video-wrap {
+      margin: 0 0 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #E5E7EB;
+      background: #1C1917;
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+    }
+    .fun-video-hit {
+      position: relative;
+      cursor: pointer;
+      line-height: 0;
+      background: #111827;
+    }
+    .fun-video-hit:focus {
+      outline: 2px solid #DC2626;
+      outline-offset: 2px;
+    }
+    .fun-video-preview {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+    .fun-video-play {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(220, 38, 38, 0.92);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      line-height: 1.4;
+      pointer-events: none;
+    }
+    .fun-video-player {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      vertical-align: middle;
+    }
+    .chapter-head {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 3px solid #DC2626;
+    }
+    .chapter-head .chapter-num {
+      display: inline-block;
+      background: #DC2626;
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-right: 12px;
+      line-height: 1.3;
+      flex-shrink: 0;
+    }
+    .chapter-head .chapter-meta {
+      min-width: 0;
+      flex: 1;
+    }
+    .chapter-head .chapter-en {
+      font-size: 11px;
+      color: #DC2626;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin: 0 0 4px;
+      line-height: 1.3;
+    }
+    .chapter-head .chapter-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #1C1917;
+      margin: 0;
+      line-height: 1.45;
+    }
+    @media (max-width: 520px) {
+      body {
+        background: #ebe4d9;
+      }
+      #article-root {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 10px 32px !important;
+      }
+      .content-pad {
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+      }
+      .content-pad > p {
+        margin-bottom: 8px !important;
+      }
+      .content-pad section[style*="margin-bottom:10px"] {
+        margin-bottom: 14px !important;
+      }
+      #article-root section[style*="padding:14px 12px"] {
+        padding: 18px 16px !important;
+      }
+      #article-root section[style*="padding:14px 14px"] {
+        padding: 16px 16px !important;
+      }
+      #article-root section[style*="border-left:4px solid #DC2626"] {
+        padding: 18px 18px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+<section id="article-root" style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;overflow-x:hidden;">
+
+  <section class="article-title-banner">
+    <p class="article-title-main">
+      <span leaf="">无忧周报</span>
+    </p>
+    <p class="article-title-sub">
+      <span class="hl-official"><span leaf="">全胜第一</span></span>
+      <span leaf=""> · </span>
+      <span leaf="">落袋无忧</span>
+    </p>
+  </section>
+
+  <section class="content-pad" style="margin-bottom:8px;">
+  <p style="margin:0 0 8px;padding:0;">
+  <span leaf="">上周日</span><span class="hl-official"><span leaf="">「众神之战」</span></span><span leaf="">收官 —— </span>恭喜<strong style="color:#DC2626;"><span leaf="">无忧一键高手战队</span></strong><span leaf="">以</span><span class="hl-official"><span leaf="">全胜战绩拿下第一名</span></span><span leaf="">。</span>
+  </p>
+  </section>
+  
+  <section class="content-pad" style="padding-bottom:24px;">
+    <p style="font-size:14px;color:#9CA3AF;margin:0 0 12px;letter-spacing:1px;">
+      <span leaf="">📌 本文看点</span>
+    </p>
+    <section style="display:flex;flex-direction:column;">
+      <section style="background:#FEF2F2;border-radius:10px;padding:14px 14px;margin-bottom:10px;border:1px solid #FEE2E2;display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:4px 10px;border-radius:4px;margin-right:12px;flex-shrink:0;"><span leaf="">01</span></span>
+        <p style="font-size:15px;font-weight:700;color:#1C1917;margin:0;line-height:1.5;"><span leaf="">全胜 · 第一</span></p>
+      </section>
+      <section style="background:#FEF2F2;border-radius:10px;padding:14px 14px;margin-bottom:10px;border:1px solid #FEE2E2;display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:4px 10px;border-radius:4px;margin-right:12px;flex-shrink:0;"><span leaf="">02</span></span>
+        <p style="font-size:15px;font-weight:700;color:#1C1917;margin:0;line-height:1.5;"><span leaf="">俱乐部活动</span></p>
+      </section>
+      <section style="background:#FEF2F2;border-radius:10px;padding:14px 14px;margin-bottom:10px;border:1px solid #FEE2E2;display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:4px 10px;border-radius:4px;margin-right:12px;flex-shrink:0;"><span leaf="">03</span></span>
+        <p style="font-size:15px;font-weight:700;color:#1C1917;margin:0;line-height:1.5;"><span leaf="">无忧趣事</span></p>
+      </section>
+      <section style="background:#FEF2F2;border-radius:10px;padding:14px 14px;border:1px solid #FEE2E2;display:flex;align-items:center;">
+        <span style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:12px;font-weight:800;padding:4px 10px;border-radius:4px;margin-right:12px;flex-shrink:0;"><span leaf="">04</span></span>
+        <p style="font-size:15px;font-weight:700;color:#1C1917;margin:0;line-height:1.5;"><span leaf="">本周公会活动安排</span></p>
+      </section>
+    </section>
+  </section>
+  
+  <section class="content-pad" style="margin-top:16px;margin-bottom:28px;">
+    <section class="chapter-head">
+      <span class="chapter-num"><span leaf="">01</span></span>
+      <section class="chapter-meta">
+        <p class="chapter-en"><span leaf="">ROSTER</span></p>
+        <p class="chapter-title"><span leaf="">冠军名单</span></p>
+      </section>
+    </section>
+  <p style="margin-bottom:20px;font-size:15px;line-height:1.85;text-align:justify;word-break:break-word;">
+  <span leaf="">队长</span><strong style="color:#DC2626;"><span leaf="">无忧十三郎</span></strong><span leaf="">，队员</span><strong><span leaf="">无忧梅朵、无忧赵子龙、无忧忧郁男神、无忧谨言、无忧苏小苏</span></strong><span leaf="">。</span>
+  </p>
+  <section style="background:#FFF;border-radius:12px;padding:6px;border:1px solid #E5E7EB;box-shadow:0 4px 12px -2px rgba(0,0,0,0.08);margin-bottom:8px;">
+    <section style="margin:0;border-radius:8px;overflow:hidden;">
+      <span leaf=""><img src="众神之战.jpg" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" alt="众神之战冠军成绩截图"></span>
+    </section>
+  </section>
+  <p style="font-size:12px;color:#9CA3AF;text-align:center;margin:0 0 24px;">
+    <span leaf="">— 众神之战冠军成绩截图（无忧俱乐部）</span>
+  </p>
+  </section>
+  
+  <section class="content-pad">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+  
+  <section class="content-pad" style="margin-top:36px;margin-bottom:28px;">
+    <section class="chapter-head">
+      <span class="chapter-num"><span leaf="">02</span></span>
+      <section class="chapter-meta">
+        <p class="chapter-en"><span leaf="">INVITE</span></p>
+        <p class="chapter-title"><span leaf="">无忧仙境 · 全体邀约</span></p>
+      </section>
+    </section>
+  <section style="background:#FEF2F2;border-radius:0 10px 10px 0;border-left:4px solid #DC2626;padding:16px 14px;margin-bottom:20px;">
+    <p style="font-size:15px;font-weight:700;color:#991B1B;margin:0;line-height:1.75;">
+      <span leaf="">「竞技之外，也想和俱乐部的人，轻松见一面。」</span>
+    </p>
+  </section>
+  <p style="margin-bottom:16px;font-size:15px;line-height:1.85;text-align:justify;word-break:break-word;">
+  <span leaf=""></span><strong style="color:#DC2626;"><span leaf="">无忧仙境</span></strong><span leaf="">活动已定：</span><strong style="color:#DC2626;"><span leaf="">11 月 5 日（周四）20:00—22:00</span></strong><span leaf="">，地点为游戏内</span><span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">无忧仙境</span></span><span leaf="">。这是一封发给</span><strong style="color:#DC2626;"><span leaf="">全体无忧俱乐部成员</span></strong><span leaf="">的邀请函——主力、休闲、刚回归的，都欢迎来。</span>
+  </p>
+  <p style="margin-bottom:16px;font-size:15px;line-height:1.85;text-align:justify;word-break:break-word;">
+  <span leaf="">当晚有</span><span style="background:#FEE2E2;color:#991B1B;padding:2px 6px;border-radius:3px;font-weight:700;"><span leaf="">自行车竞速</span></span><span leaf="">、</span><span style="background:#FEE2E2;color:#991B1B;padding:2px 6px;border-radius:3px;font-weight:700;"><span leaf="">趣味抢答</span></span><span leaf="">等轻松玩法；到场参与还有机会获得</span><span style="background:#FEE2E2;color:#991B1B;padding:2px 6px;border-radius:3px;font-weight:700;"><span leaf="">月卡</span></span><span leaf="">、</span><span style="background:#FEE2E2;color:#991B1B;padding:2px 6px;border-radius:3px;font-weight:700;"><span leaf="">战令</span></span><span leaf="">等奖励。图的是同频道里的笑声与默契，不是谁比谁更卷。</span>
+  </p>
+  <section style="background:#FFF;border-radius:12px;padding:6px;border:1px solid #E5E7EB;box-shadow:0 4px 12px -2px rgba(0,0,0,0.08);margin-bottom:8px;">
+    <section style="margin:0;border-radius:8px;overflow:hidden;">
+      <span leaf=""><img src="无忧仙境活动.png" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" alt="无忧仙境活动邀请函"></span>
+    </section>
+  </section>
+  <p style="font-size:12px;color:#9CA3AF;text-align:center;margin:0 0 24px;">
+    <span leaf="">— 无忧仙境邀请函（11/5 20:00—22:00）</span>
+  </p>
+  <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+  <span leaf="">请提前留出时间，大家准时见面。奖励含</span><span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">月卡、战令</span></span><span leaf="">等，集合方式与发放细则以</span><span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">工会通知</span></span><span leaf="">为准。我们在仙境见。</span>
+  </p>
+  </section>
+  
+  <section class="content-pad">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+  
+  <section class="content-pad" style="margin-top:36px;margin-bottom:28px;">
+    <section class="chapter-head">
+      <span class="chapter-num"><span leaf="">03</span></span>
+      <section class="chapter-meta">
+        <p class="chapter-en"><span leaf="">FUN</span></p>
+        <p class="chapter-title"><span leaf="">无忧趣事</span></p>
+      </section>
+    </section>
+  <section style="background:#FEF2F2;border-radius:0 10px 10px 0;border-left:4px solid #DC2626;padding:16px 14px;margin-bottom:20px;">
+    <p style="font-size:15px;font-weight:700;color:#991B1B;margin:0;line-height:1.75;">
+      <span leaf="">「战绩要冲，整活也不能停。」</span>
+    </p>
+  </section>
+  <p style="margin:0 0 8px;padding:0;">
+  <span leaf="">问一句：</span><span class="hl-official"><span leaf="">想看元傀和太子叔跳舞吗？</span></span><span leaf=""> 群里本来在当猎龙城主，结果两个人突然在镜头前「营业」——节奏感有没有另说，节目效果是拉满了。</span>
+  </p>
+  <section class="fun-video-wrap">
+    <div class="fun-video-hit" id="funVideoHit" role="button" tabindex="0" aria-label="播放元傀和太子叔跳舞视频">
+      <video class="fun-video-preview" src="视频.mp4#t=0.1" preload="metadata" playsinline muted aria-hidden="true"></video>
+      <span class="fun-video-play"><span leaf="">▶ 点击播放</span></span>
+    </div>
+    <video class="fun-video-player" id="funVideoPlayer" preload="none" playsinline controls style="display:none;"></video>
+  </section>
+  <p style="font-size:12px;color:#9CA3AF;text-align:center;margin:0 0 24px;">
+    <span leaf="">— 俱乐部整活现场：元傀 × 太子叔</span>
+  </p>
+  <p style="margin:0 0 20px;padding:0;">
+  <span leaf="">有类似名场面欢迎丢管理，下期周报继续收录。笑归笑，该跟的活动跟、该报的名别落下——</span><span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">我们频道见</span></span><span leaf="">。</span>
+  </p>
+  </section>
+  
+  <section class="content-pad">
+    <section style="height:1px;background:linear-gradient(to right,transparent,#FCA5A5,#DC2626,#FCA5A5,transparent);margin:0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+  
+  <section class="content-pad" style="margin-top:48px;margin-bottom:28px;">
+    <section class="chapter-head">
+      <span class="chapter-num"><span leaf="">04</span></span>
+      <section class="chapter-meta">
+        <p class="chapter-en"><span leaf="">SCHEDULE</span></p>
+        <p class="chapter-title"><span leaf="">本周活动安排</span></p>
+      </section>
+    </section>
+  <p style="margin-bottom:14px;font-size:14px;line-height:1.75;text-align:justify;color:#6B7280;">
+  <span leaf="">以下时间为当前安排，</span><span style="border-bottom:2px solid #FECACA;font-weight:600;"><span leaf="">具体以工会通知为准</span></span><span leaf="">。</span>
+  </p>
+  <section style="margin-bottom:16px;">
+    <section style="margin-bottom:10px;padding:14px 12px;border-radius:10px;border:1px solid #FEE2E2;background:#FFFFFF;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:800;color:#1C1917;line-height:1.4;"><span leaf="">10 月 28 日 · 星期三</span></p>
+      <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#DC2626;"><span leaf="">高原竞逐</span></p>
+      <p style="margin:0;font-size:14px;line-height:1.75;color:#374151;"><span leaf="">12:00—20:30 报名</span><br><span leaf="">20:45—21:15 进行</span></p>
+    </section>
+    <section style="margin-bottom:10px;padding:14px 12px;border-radius:10px;border:1px solid #FEE2E2;background:#FFFFFF;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:800;color:#1C1917;line-height:1.4;"><span leaf="">10 月 29 日 · 星期四</span></p>
+      <p style="margin:0;font-size:14px;font-weight:700;color:#DC2626;"><span leaf="">新秘偶上线</span></p>
+    </section>
+    <section style="margin-bottom:10px;padding:14px 12px;border-radius:10px;border:1px solid #FECACA;background:#FEF2F2;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:800;color:#1C1917;line-height:1.4;"><span leaf="">10 月 30 日 · 星期五</span></p>
+      <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#DC2626;"><span leaf="">跨服巨龙</span></p>
+      <p style="margin:0;font-size:14px;line-height:1.75;color:#374151;"><span leaf="">19:30 集合</span><br><span leaf="">20:00—20:45 进行</span></p>
+      <p style="margin:14px 0 0;text-align:center;">
+        <a href="https://wuyouclub.online/a/bc0c8e78-7d29-411d-9bbd-d49e91357b83" style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:14px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;"><span leaf="">报名 / 签到入口</span></a>
+      </p>
+    </section>
+    <section style="margin-bottom:10px;padding:14px 12px;border-radius:10px;border:1px solid #FECACA;background:#FEF2F2;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:800;color:#1C1917;line-height:1.4;"><span leaf="">10 月 31 日 · 星期六</span></p>
+      <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#DC2626;"><span leaf="">四方联赛</span><br><span leaf="">高原竞逐</span></p>
+      <p style="margin:0;font-size:14px;line-height:1.75;color:#374151;"><span leaf="">12:00—20:30 高原竞逐报名</span><br><span leaf="">19:30 四方联赛集合</span><br><span leaf="">20:00 四方联赛开始</span><br><span leaf="">20:45—21:15 高原竞逐进行</span></p>
+      <p style="margin:14px 0 0;text-align:center;">
+        <a href="https://wuyouclub.online/a/16f40128-fd11-4791-af6d-eba6edd2093c" style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:14px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;"><span leaf="">报名 / 签到入口</span></a>
+      </p>
+    </section>
+    <section style="padding:14px 12px;border-radius:10px;border:1px solid #FECACA;background:#FEF2F2;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:800;color:#1C1917;line-height:1.4;"><span leaf="">11 月 1 日 · 星期天</span></p>
+      <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#DC2626;"><span leaf="">跨服巨龙</span></p>
+      <p style="margin:0;font-size:14px;line-height:1.75;color:#374151;"><span leaf="">18:30 集合</span><br><span leaf="">19:00—20:00 进行</span></p>
+      <p style="margin:14px 0 0;text-align:center;">
+        <a href="https://wuyouclub.online/a/a91e3c05-6363-4fc4-9df7-aaabf65fc357" style="display:inline-block;background:#DC2626;color:#FFFFFF;font-size:14px;font-weight:700;padding:10px 18px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;"><span leaf="">报名 / 签到入口</span></a>
+      </p>
+    </section>
+  </section>
+  <p style="margin-bottom:20px;font-size:15px;line-height:1.8;text-align:justify;">
+  <span leaf="">记得设闹钟，准时进组；周五至周日可点卡片内按钮进入报名页。有变动以工会频道通知为准。若无法参加，请提前与会长或管理沟通。</span>
+  </p>
+  </section>
+  
+  <section class="content-pad">
+    <section style="text-align:center;margin:0 0 32px;">
+      <section style="display:flex;align-items:center;justify-content:center;">
+        <span style="height:2px;width:60px;background:linear-gradient(to right,transparent,#DC2626);margin-right:12px;"><span leaf=""><br></span></span>
+        <span style="font-size:11px;color:#DC2626;letter-spacing:3px;font-weight:700;"><span leaf="">END</span></span>
+        <span style="height:2px;width:60px;background:linear-gradient(to left,transparent,#DC2626);margin-left:12px;"><span leaf=""><br></span></span>
+      </section>
+    </section>
+  </section>
+  
+  </section>
+<script>
+(function () {
+  var hit = document.getElementById("funVideoHit");
+  var player = document.getElementById("funVideoPlayer");
+  if (!hit || !player) return;
+  var src = "视频.mp4";
+  function startPlay() {
+    hit.style.display = "none";
+    player.style.display = "block";
+    if (!player.getAttribute("src")) {
+      player.setAttribute("src", src);
+      player.load();
+    }
+    player.play().catch(function () {});
+  }
+  hit.addEventListener("click", startPlay);
+  hit.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      startPlay();
+    }
+  });
+})();
+</script>
+</body>
+</html>
