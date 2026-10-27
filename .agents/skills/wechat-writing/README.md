@@ -1,0 +1,194 @@
+# 🖊️ wechat-writing-skill
+
+> 一个帮你写出风格一致、有传播力的公众号文章的 Claude Skill。
+> 面向副业创业者、独立开发者、AI 从业者。
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Skill Version](https://img.shields.io/badge/skill-v1.0.0-blue)]()
+[![Works with Claude Code](https://img.shields.io/badge/Claude%20Code-ready-green)]()
+[![Works with Cursor](https://img.shields.io/badge/Cursor-ready-purple)]()
+
+---
+
+## 这个 skill 能做什么
+
+| 功能 | 触发方式 |
+|------|----------|
+| ✍️ 写新文章 | "帮我写一篇关于XX的文章" |
+| 🔍 评估文章 | "帮我评估这篇文章" |
+| 💡 选题构思 | "给我几个选题方向" |
+| ✂️ 改写优化 | "帮我改写这个标题 / 这篇文章" |
+
+每篇文章自动生成 6 个部分：标题、开头引言钩子、摘要、正文、结尾互动钩子、配图需求。
+
+---
+
+## 快速开始
+
+### 在 Claude Code 中使用
+
+```bash
+# 克隆仓库到你的项目根目录
+git clone https://github.com/Qson8/wechat-writing-skill.git
+
+# 把 CLAUDE.md 复制到项目根目录
+cp wechat-writing-skill/CLAUDE.md ./CLAUDE.md
+
+# 启动 Claude Code，直接说：
+# "帮我写一篇关于独立开发第一步的公众号文章"
+```
+
+### 在 Cursor 中使用
+
+```bash
+git clone https://github.com/Qson8/wechat-writing-skill.git
+
+# 复制 rules 文件到你的项目
+cp -r wechat-writing-skill/.cursor ./
+
+# 在 Composer 里 @wechat-writing 引用规则，或直接对话
+```
+
+### 直接调用 API
+
+```python
+import anthropic
+
+with open("wechat-writing-skill/SKILL.md") as f:
+    skill = f.read()
+
+client = anthropic.Anthropic()
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=4096,
+    system=skill,
+    messages=[{
+        "role": "user",
+        "content": "帮我写一篇关于「用AI工具把副业效率提升3倍」的公众号文章"
+    }]
+)
+print(message.content[0].text)
+```
+
+---
+
+## 配套配图生成
+
+```bash
+pip install pillow
+
+python -c "
+from wechat_writing_skill.scripts.render_images import render_cover, render_comparison
+
+# 生成封面图
+render_cover(
+    title='我用3个工具把公众号更新从4小时缩到30分钟',
+    subtitle='独立开发者效率工具实测',
+    output_path='cover.png',
+    template_path='wechat_writing_skill/scripts/post_image_templates.pen'
+)
+
+# 生成对比表
+render_comparison(
+    headers=['对比项', '方案A', '方案B', '推荐方案'],
+    rows=[
+        ['时间成本', '4小时', '2小时', '30分钟'],
+        ['学习成本', '高', '中', '低'],
+    ],
+    chart_title='三种方案对比',
+    output_path='comparison.png'
+)
+"
+```
+
+---
+
+## 完整自动化流水线
+
+配合 `main.py` 实现：生成文章 → 渲染配图 → 推送微信草稿箱 → 手动发布。
+
+```
+AI生成文章
+    ↓
+自动渲染封面图 + 正文配图（基于 .pen 模板）
+    ↓
+上传图片到微信素材库
+    ↓
+推送草稿箱
+    ↓
+手动点击发布（订阅号限制，无法全自动）
+```
+
+详见 [自动化流水线文档](./docs/automation.md)。
+
+---
+
+## 文件结构
+
+```
+wechat-writing-skill/
+├── SKILL.md                      ← 核心 skill 文件（写作规则 + 输出格式）
+├── SKILL_eval.md                 ← 独立评估框架（100分制）
+├── CLAUDE.md                     ← Claude Code 自动加载配置
+├── .cursor/
+│   └── rules/
+│       └── wechat-writing.mdc   ← Cursor 规则文件
+├── evals/
+│   ├── evals.json                ← 测试用例（5个场景覆盖4种服务）
+│   └── run_evals.py              ← 执行脚本，调用 Claude API 跑用例
+├── scripts/
+│   ├── render_images.py          ← 封面图 / 对比表 / 流程图渲染
+│   └── post_image_templates.pen ← 封面排版模板
+├── docs/
+│   └── automation.md             ← 完整自动化流水线说明
+├── LICENSE                       ← MIT
+└── README.md                     ← 本文件
+```
+
+---
+
+## 写作风格说明
+
+**核心：大白话 + 真实感 + 适度刺激**
+
+- 像朋友聊天，但朋友有时候会戳你一下
+- 可以适度制造焦虑感，但落脚点是给出路
+- 有具体数字、真实案例，不讲虚的
+- 口语化，段落简短，适合手机阅读
+
+**禁用词：** 颠覆认知、逆天、炸裂、相信自己、今天给大家分享……
+
+**可用（≤2次/篇）：** 干货、赋能、破局
+
+---
+
+## 评估框架
+
+文章生成后可用内置评估框架打分（满分100）：
+
+| 维度 | 满分 |
+|------|------|
+| 标题 | 20 |
+| 开头 | 20 |
+| 正文内容 | 30 |
+| 语言风格 | 20 |
+| 结尾 | 10 |
+
+85分以上可直接发布，70分以下建议重写。
+
+---
+
+## 贡献指南
+
+欢迎提 PR 或 Issue：
+
+- 补充更多 `evals.json` 测试用例
+- 改进写作风格规则
+- 增加新的图片渲染模板
+- 适配其他内容方向（不只是独立开发，可以是其他垂直领域）
+
+---
+
+## License
+
+[MIT](./LICENSE) — 随便用，随便改，记得给个 Star ⭐

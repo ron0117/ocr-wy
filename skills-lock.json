@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "gzh-design": {
+      "source": "isjiamu/gzh-design-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "36fe7aaa30b8e07a228d6aacaef79d84363cd1dc549cee26859754a512b4d2ea"
+    },
+    "wechat-post-craft": {
+      "source": "haomingz/kimi-skills",
+      "sourceType": "github",
+      "skillPath": "skills/wechat-post-craft/SKILL.md",
+      "computedHash": "91643871e3e8697a71555a1f2d005d3ea05b694c14e3b1ed4de5ee895d19c7f1"
+    },
+    "wechat-typesetting-cy": {
+      "source": "cy-chenyue/wechat-typesetting-cy",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "ee587a9be1ea39c0332ce0cf6c548e80943b29253a930ddc28bb9afaf7ee574b"
+    },
+    "wechat-writing": {
+      "source": "qson8/wechat-writing-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "39f1008306a751bff5de92478227d88a92a1667f922dd874f2d1a27f61b1a64d"
+    }
+  }
+}

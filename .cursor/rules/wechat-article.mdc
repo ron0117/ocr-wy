@@ -1,0 +1,45 @@
+---
+description: 微信公众号推文选题、写作、排版与交付（配合 .agents/skills 与主编提示词）
+globs: docs/wechat/**,**/*推文*,**/*公众号*
+alwaysApply: false
+---
+
+# 微信推文制作
+
+## 已安装 Skills（项目内路径）
+
+| 优先级 | Skill | 路径 | 用途 |
+|--------|--------|------|------|
+| 1 | wechat-post-craft | `.agents/skills/wechat-post-craft` | 选题、标题、结构、CTA、传播向写作 |
+| 2 | wechat-writing | `.agents/skills/wechat-writing` | 写作全流程（含配图脚本等，按需） |
+| 3 | wechat-typesetting-cy | `.agents/skills/wechat-typesetting-cy` | 定制化排版、移动端校验 |
+| 4 | gzh-design | `.agents/skills/gzh-design` | 专业排版：Markdown → 可粘贴公众号的内联 HTML |
+
+执行推文任务前，按上表顺序 **Read 对应 `SKILL.md`**，再动手；不要凭记忆写排版 HTML 或跳过 skill 里的校验步骤。
+
+## 标准流程
+
+1. **澄清 brief**：按 [`docs/wechat/_template/brief.md`](../docs/wechat/_template/brief.md) 填「俱乐部信息 + 内容素材」；比分、引语、参与方式等缺项标「待补充」，不要编造。
+2. **选题与成稿**：优先遵循 [wechat-article-editor.md](../prompts/wechat-article-editor.md)（游戏俱乐部主编提示词）；与 wechat-post-craft / wechat-writing 冲突时，以 **主编提示词** 为准。成稿只输出自审后正文，思考过程写入 `delivery.md` 或不展示。
+3. **交付物（写作阶段）**：见 [`docs/wechat/_template/delivery.md`](../docs/wechat/_template/delivery.md)——核心看点、标题（初稿 10 + 终稿备选 10）、摘要、朋友圈 / 粉丝群文案、封面与海报句、章节配图、版式标记、发布核对清单与自审项；正文写入 `article.md`。
+4. **排版（有 Markdown 终稿后）**：
+   - 需要 CY 定制组件或严格移动端/兼容校验 → `wechat-typesetting-cy`
+   - 需要主题库、复制按钮预览页、双关卡 HTML 校验 → `gzh-design`（按 SKILL 选主题、跑 validate，ERROR 清零再交付）
+5. **产物路径建议**：`docs/wechat/YYYY-MM-主题-slug/` 下存 `brief.md`、`article.md`、`article.html`（如有）。
+
+## 写作硬性约束（摘要）
+
+- 比分、数据、奖项、成员发言必须来自 brief 素材；缺失标「待补充」，禁止编造。
+- 段落 2～4 句；小标题像观点或战局节点；避免官方通稿腔与明显 AI 腔。
+- 标题有游戏圈氛围，禁用虚假「震惊」「封神」「全网沸腾」；不攻击选手、对手或普通玩家。
+- 战报写关键转折；招新 / 活动宣传写清对象、方式、截止与参与收益；CTA 与 brief 一致。
+
+## 触发示例
+
+- 「按主编提示词写一篇关于【X】的公众号推文，brief 如下：…」
+- 「`docs/wechat/.../article.md` 用 gzh-design 摸鱼绿排成可粘贴 HTML」
+- 「这篇终稿走 wechat-typesetting-cy 定制排版并做兼容校验」
+
+## 主编提示词模板
+
+完整可复制模板见：[`.cursor/prompts/wechat-article-editor.md`](../prompts/wechat-article-editor.md)
