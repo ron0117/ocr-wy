@@ -27,15 +27,29 @@ if ($IdentityFile) {
 
 try {
     Write-Host "正在打包项目..."
-    & tar -czf $Archive `
-        --exclude=.git `
-        --exclude=node_modules `
-        --exclude='*/node_modules' `
-        --exclude='*/dist' `
-        --exclude=.env `
-        --exclude=.env.production `
-        --exclude=data `
-        -C $ProjectDir .
+    $TarExcludeFile = Join-Path $ProjectDir "deploy/public-cos-excludes.txt"
+    $TarArgs = @(
+        "-czf", $Archive,
+        "--exclude=.git",
+        "--exclude=node_modules",
+        "--exclude=*/node_modules",
+        "--exclude=*/dist",
+        "--exclude=.env",
+        "--exclude=.env.production",
+        "--exclude=data"
+    )
+    if (Test-Path -LiteralPath $TarExcludeFile) {
+        Get-Content -LiteralPath $TarExcludeFile -Encoding UTF8 | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and -not $line.StartsWith("#")) {
+                $TarArgs += "--exclude=$line"
+            }
+        }
+    } else {
+        Write-Warning "未找到 deploy/public-cos-excludes.txt，COS 媒体仍会打进部署包。可执行 pnpm upload:public-cos"
+    }
+    $TarArgs += "-C", $ProjectDir, "."
+    & tar @TarArgs
     if ($LASTEXITCODE -ne 0) { throw "项目打包失败" }
 
     Write-Host "正在上传到 $Target ..."

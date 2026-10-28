@@ -16,6 +16,12 @@ COPY packages/shared-types/package.json packages/shared-types/package.json
 RUN pnpm install --frozen-lockfile
 COPY apps/web apps/web
 COPY packages/shared-types packages/shared-types
+ARG VITE_PUBLIC_ASSET_CDN=
+ARG VITE_PUBLIC_ASSET_OMIT_LOCAL=
+ARG VITE_PUBLIC_ASSET_KEY_PREFIX=
+ENV VITE_PUBLIC_ASSET_CDN=$VITE_PUBLIC_ASSET_CDN
+ENV VITE_PUBLIC_ASSET_OMIT_LOCAL=$VITE_PUBLIC_ASSET_OMIT_LOCAL
+ENV VITE_PUBLIC_ASSET_KEY_PREFIX=$VITE_PUBLIC_ASSET_KEY_PREFIX
 RUN pnpm --filter @ocr/web build
 
 FROM nginx:1.27-alpine

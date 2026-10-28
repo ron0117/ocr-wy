@@ -16,3 +16,4 @@ packages/shared-types/dist
 .prisma
 coverage
 *.tsbuildinfo
+deploy/public-cos-manifest.json

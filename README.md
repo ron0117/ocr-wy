@@ -36,6 +36,52 @@ GCS_BUCKET=your-private-ocr-bucket
 
 运行环境使用最小权限的 Application Default Credentials。签名下载链接 5 分钟有效，并且只在确认资源属于当前用户后签发。
 
+## 活动页静态媒体（COS / CDN）
+
+`apps/web/public/` 下的 HTML（如 `20261027/20261027.html`）随前端镜像由 Nginx 提供；大图、视频可单独上传到腾讯云 COS，并用自定义域名或 CDN 加速（页面仍访问 `https://你的域名/20261027/20261027.html`）。
+
+### `pnpm upload:public-cos`
+
+根目录脚本 **`scripts/upload-public-cos.ts`**，用于把活动页媒体同步到 COS（桶需 **私有写、公有读**）。
+
+**不会**上传整个 `public/` 目录，只上传 `apps/web/public-asset-pages.ts` 里 `PUBLIC_ASSET_PAGES` 列出的文件（当前为 `20261027/` 下 4 个图片/视频）。`*.html`、`WW_verify_*.txt` 等仍由主站 Nginx 提供，不上 COS。
+
+| 命令 | 作用 |
+|------|------|
+| `pnpm upload:public-cos` | 上传到 COS，写入 manifest，并把 `PUBLIC_ASSET_PAGES` 对应 HTML 里的相对媒体路径改成 COS/CDN 绝对地址 |
+| `pnpm upload:public-cos --write-env` | 同上，并更新根目录 `.env.production` 中的 `VITE_PUBLIC_ASSET_CDN`、`VITE_PUBLIC_ASSET_OMIT_LOCAL=true`（构建时从 `dist` 剔除已上 COS 的媒体，镜像里只留 HTML） |
+| `pnpm upload:public-cos --dry-run` | 不实际上传、不改 HTML，只打印将使用的对象键与 URL |
+| `pnpm build:web-with-cos` | `upload:public-cos --write-env` 后执行 web 生产构建 |
+
+**环境变量**（写在项目根 `.env.production`，可参考 `deploy/.env.production.example`；带 `#` 的行不会被脚本读取）：
+
+```
+COS_SECRET_ID=
+COS_SECRET_KEY=
+COS_BUCKET=桶名-APPID
+COS_REGION=ap-shanghai
+COS_PUBLIC_BASE_URL=https://你的静态资源域名
+COS_KEY_PREFIX=
+```
+
+未设置 `COS_PUBLIC_BASE_URL` 时，公网地址使用默认 COS 域名 `https://<bucket>.cos.<region>.myqcloud.com`。自定义域名须已在 COS/CDN 控制台配置 **HTTPS 证书**，否则浏览器会报「连接不安全」。
+
+**本地验证（A 方案：HTML 在本机/主站，媒体走 COS）：**
+
+```powershell
+Copy-Item deploy\.env.production.example .env.production   # 首次：填入 COS_* 并去掉注释
+pnpm upload:public-cos --write-env
+pnpm --filter @ocr/web build
+pnpm --filter @ocr/web preview
+# 打开 http://127.0.0.1:4173/20261027/20261027.html，在 Network 中确认媒体来自 COS/CDN 域名
+```
+
+HTML 在上传成功后会直接写成 COS 地址；本地 `pnpm dev:web` 也会走 CDN 拉媒体（需网络）。若仍想用相对路径开发，先不要执行上传，或从 git 还原 `public/` 内 HTML。
+
+**生产部署：** 推荐 `pnpm build:web-with-cos`（上传 + 改 HTML + 写 `.env.production` + 构建）。构建阶段在 `VITE_PUBLIC_ASSET_OMIT_LOCAL=true` 时会删除 `dist` 里已上 COS 的大文件，Nginx 镜像不再携带这些媒体。再运行 `deploy/bootstrap-centos.sh` / `upload-and-deploy.ps1`；`docker-compose.prod.yml` 会把 `.env.production` 里的 CDN/OMIT 变量传入 web 镜像构建。
+
+新增活动页媒体时，在 `apps/web/public-asset-pages.ts` 增加文件名后重新执行 `pnpm upload:public-cos`（会同步 `.dockerignore` 与 `deploy/public-cos-excludes.txt`）。
+
 ## 尚未包含
 
 任务量上来之后再加 Redis 和 BullMQ。当前识别、整理和导出都在请求内完成。
@@ -74,6 +120,8 @@ powershell -ExecutionPolicy Bypass -File deploy/upload-and-deploy.ps1 `
 使用 SSH 私钥时再加 `-IdentityFile C:\路径\id_ed25519`。上传脚本会排除
 `.git`、`node_modules`、构建产物、本地环境变量和本地数据，不会把开发机密码上传；
 服务器已有的 `.env.production` 会被保留。
+
+另会读取 `deploy/public-cos-excludes.txt`（由 `pnpm upload:public-cos` 根据 `public-asset-pages.ts` 生成），**部署包与 Docker 构建上下文均不再包含已上 COS 的 public 媒体**。新增活动页媒体后请重新执行 `upload:public-cos` 并提交生成的 exclude 文件。
 
 脚本会完成以下工作：
 

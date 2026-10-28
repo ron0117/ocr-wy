@@ -9,13 +9,17 @@
   "devDependencies": {
     "@prisma/client": "^6.6.0",
     "bcryptjs": "^2.4.3",
-    "prisma": "^6.6.0"
+    "cos-nodejs-sdk-v5": "^2.14.6",
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.3"
   },
   "scripts": {
     "build:types": "pnpm --filter @ocr/shared-types build",
     "dev:api": "pnpm --filter @ocr/api dev",
     "dev:web": "pnpm --filter @ocr/web dev",
     "build": "pnpm --filter @ocr/shared-types build && pnpm --filter @ocr/api build && pnpm --filter @ocr/web build",
+    "upload:public-cos": "tsx scripts/upload-public-cos.ts",
+    "build:web-with-cos": "tsx scripts/upload-public-cos.ts --write-env && pnpm --filter @ocr/web build",
     "check": "pnpm --filter @ocr/api check",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",

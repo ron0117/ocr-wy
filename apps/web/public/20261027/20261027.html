@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+  <!-- 媒体在腾讯云 COS/CDN；执行 pnpm upload:public-cos 会改写本页内媒体地址。HTML 仍由主站 Nginx 提供。 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>无忧周报 · 无忧俱乐部</title>
@@ -16,7 +17,7 @@
       padding: 0 10px 36px;
       box-sizing: border-box;
       background-color: #f4ede3;
-      background-image: url("https://mmbiz.qpic.cn/mmbiz_png/omtkB5Q4XALKDfydOKRVLfanrwyP9ibYu8390KibczdAWrhW5mK0gFqz5L0Pk5e6qstmNJWDWn2Mj61D8stwcNuYo0mydW8CXMCtyEVNwmfPg/640?wx_fmt=png");
+      background-image: url("https://guide.wuyouclub.online/20261027/wechat-article-background-original.png");
       background-repeat: repeat-y;
       background-size: 100% auto;
       background-position: 0 0;
@@ -235,7 +236,7 @@
   </p>
   <section style="background:#FFF;border-radius:12px;padding:6px;border:1px solid #E5E7EB;box-shadow:0 4px 12px -2px rgba(0,0,0,0.08);margin-bottom:8px;">
     <section style="margin:0;border-radius:8px;overflow:hidden;">
-      <span leaf=""><img src="众神之战.jpg" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" alt="众神之战冠军成绩截图"></span>
+      <span leaf=""><img src="https://guide.wuyouclub.online/20261027/%E4%BC%97%E7%A5%9E%E4%B9%8B%E6%88%98.jpg" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" alt="众神之战冠军成绩截图"></span>
     </section>
   </section>
   <p style="font-size:12px;color:#9CA3AF;text-align:center;margin:0 0 24px;">
@@ -270,7 +271,7 @@
   </p>
   <section style="background:#FFF;border-radius:12px;padding:6px;border:1px solid #E5E7EB;box-shadow:0 4px 12px -2px rgba(0,0,0,0.08);margin-bottom:8px;">
     <section style="margin:0;border-radius:8px;overflow:hidden;">
-      <span leaf=""><img src="无忧仙境活动.png" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" alt="无忧仙境活动邀请函"></span>
+      <span leaf=""><img src="https://guide.wuyouclub.online/20261027/%E6%97%A0%E5%BF%A7%E4%BB%99%E5%A2%83%E6%B4%BB%E5%8A%A8.png" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" alt="无忧仙境活动邀请函"></span>
     </section>
   </section>
   <p style="font-size:12px;color:#9CA3AF;text-align:center;margin:0 0 24px;">
@@ -305,7 +306,7 @@
   </p>
   <section class="fun-video-wrap">
     <div class="fun-video-hit" id="funVideoHit" role="button" tabindex="0" aria-label="播放元傀和太子叔跳舞视频">
-      <video class="fun-video-preview" src="视频.mp4#t=0.1" preload="metadata" playsinline muted aria-hidden="true"></video>
+      <video class="fun-video-preview" src="https://guide.wuyouclub.online/20261027/%E8%A7%86%E9%A2%91.mp4#t=0.1" preload="metadata" playsinline muted aria-hidden="true"></video>
       <span class="fun-video-play"><span leaf="">▶ 点击播放</span></span>
     </div>
     <video class="fun-video-player" id="funVideoPlayer" preload="none" playsinline controls style="display:none;"></video>
@@ -391,7 +392,7 @@
   var hit = document.getElementById("funVideoHit");
   var player = document.getElementById("funVideoPlayer");
   if (!hit || !player) return;
-  var src = "视频.mp4";
+  var src = "https://guide.wuyouclub.online/20261027/%E8%A7%86%E9%A2%91.mp4";
   function startPlay() {
     hit.style.display = "none";
     player.style.display = "block";
