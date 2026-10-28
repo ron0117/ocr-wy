@@ -1,0 +1,7 @@
+FROM nginx:1.27-alpine
+COPY deploy/nginx.guide.http.conf /opt/nginx/http.conf
+COPY deploy/nginx.guide.https.conf /opt/nginx/https.conf
+COPY deploy/guide-web-entrypoint.sh /guide-entrypoint.sh
+RUN chmod +x /guide-entrypoint.sh
+EXPOSE 80 443
+ENTRYPOINT ["/guide-entrypoint.sh"]

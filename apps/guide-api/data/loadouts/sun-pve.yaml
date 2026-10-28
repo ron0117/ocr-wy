@@ -1,0 +1,16 @@
+slug: sun-pve
+title: "太阳途径 · PVE 演示"
+pathwaySlug: sun
+scenarioCode: PVE
+gearSlots:
+  WEAPON: sun-wpn-001
+skillBar:
+  - s-86011010
+  - s-86011020
+comboSteps:
+  - skillSlug: s-86011010
+    label: 起手
+  - skillSlug: s-86011020
+    label: 衔接
+sourceNote: "演示配装，装备与连招需随实测更新"
+verifiedAt: "2026-10-28"

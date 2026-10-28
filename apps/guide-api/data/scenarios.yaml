@@ -1,0 +1,6 @@
+- code: PVE
+  name: PVE 副本
+- code: PVP
+  name: PVP 对战
+- code: OPEN_WORLD
+  name: 开放世界

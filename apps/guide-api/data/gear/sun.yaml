@@ -1,0 +1,15 @@
+# 游戏内面板核对后替换 name/stats；slug 保持稳定即可
+- slug: sun-wpn-001
+  name: "演示武器（请在游戏内录入后改名）"
+  slot: WEAPON
+  rarity: LEGENDARY
+  pathwaySlugs: [sun]
+  baseStats:
+    attack: 100
+    critRate: 0.05
+  affixes:
+    - label: "演示词条"
+      stats:
+        attack: 20
+  sourceNote: "占位数据，待游戏内实测替换"
+  verifiedAt: "2026-10-28"

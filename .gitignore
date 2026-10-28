@@ -1,7 +1,7 @@
 node_modules
 dist
 .pnpm-store
-data
+/data
 .env
 .env.production
 *.log
@@ -13,6 +13,10 @@ __pycache__
 apps/api/dist
 apps/web/dist
 packages/shared-types/dist
+packages/guide-types/dist
+apps/guide-api/src/generated
+apps/guide/.next
+apps/guide-api/dist
 .prisma
 coverage
 *.tsbuildinfo

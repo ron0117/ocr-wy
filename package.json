@@ -11,12 +11,21 @@
     "bcryptjs": "^2.4.3",
     "cos-nodejs-sdk-v5": "^2.14.6",
     "prisma": "^6.6.0",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "yaml": "^2.7.1"
   },
   "scripts": {
     "build:types": "pnpm --filter @ocr/shared-types build",
     "dev:api": "pnpm --filter @ocr/api dev",
     "dev:web": "pnpm --filter @ocr/web dev",
+    "dev:guide-api": "pnpm --filter @ocr/guide-api dev",
+    "dev:guide": "pnpm --filter @ocr/guide dev",
+    "build:guide-types": "pnpm --filter @ocr/guide-types build",
+    "build:guide": "pnpm --filter @ocr/guide-types build && pnpm guide:prisma:generate && pnpm --filter @ocr/guide-api build && pnpm --filter @ocr/guide build",
+    "guide:prisma:generate": "tsx scripts/guide-prisma-cli.ts generate --schema prisma/guide/schema.prisma",
+    "guide:prisma:migrate": "tsx scripts/guide-prisma-cli.ts migrate dev --schema prisma/guide/schema.prisma",
+    "guide:db:deploy": "tsx scripts/guide-prisma-cli.ts migrate deploy --schema prisma/guide/schema.prisma",
+    "guide:import": "pnpm --filter @ocr/guide-types build && pnpm guide:prisma:generate && tsx scripts/guide-import.ts",
     "build": "pnpm --filter @ocr/shared-types build && pnpm --filter @ocr/api build && pnpm --filter @ocr/web build",
     "upload:public-cos": "tsx scripts/upload-public-cos.ts",
     "build:web-with-cos": "tsx scripts/upload-public-cos.ts --write-env && pnpm --filter @ocr/web build",

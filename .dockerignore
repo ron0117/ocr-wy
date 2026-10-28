@@ -1,10 +1,14 @@
 node_modules
 **/node_modules
 **/dist
+apps/guide-api/src/generated
 .git
 .env
 .env.production
-data
+/data
+!apps/guide-api/data
+!apps/guide-api/data/**
+docs
 *.log
 
 # BEGIN public-cos-excludes (pnpm upload:public-cos)

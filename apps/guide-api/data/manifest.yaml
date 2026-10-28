@@ -1,0 +1,9 @@
+gameVersion: "0.4.1+20261025.2"
+verifiedAt: "2026-10-28"
+sourceNote: "叨叨诡秘助手 v0.4.1b 解包 JSON + 游戏内录入装备（非官方）"
+sourcesDir: "./sources"
+files:
+  - scenarios.yaml
+  - gear/sun.yaml
+  - loadouts/sun-pve.yaml
+  - rules/stats-v1.json

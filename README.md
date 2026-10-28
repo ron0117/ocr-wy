@@ -157,3 +157,48 @@ sudo docker compose --env-file .env.production -f docker-compose.prod.yml down
 `ocr-platform_postgres_data` 和 `ocr-platform_app_storage`，不要使用
 `docker compose down -v`，否则会删除这些数据。域名解析到这台服务器后，
 重新运行部署脚本即可签出证书，站点通过 `https://wuyouclub.online` 访问。
+
+## 途径配装助手（Guide / wiki）
+
+与识单 **独立数据库、独立端口**，源码在 `apps/guide`（Next）与 `apps/guide-api`（Nest）。生产域名为 `https://wiki.wuyouclub.online`（见 `docs/plan/开发计划-guide.md`）。
+
+本地（PostgreSQL 与 OCR 同实例，**另建库 `guide`**；若 OCR 用 `5433`，见 `apps/guide-api/.env.example`）：
+
+```powershell
+# 根目录 .env 增加 GUIDE_DATABASE_URL（见 .env.example；未配置时会尝试把 DATABASE_URL 的库名 ocr 换成 guide）
+
+pnpm guide:prisma:migrate
+pnpm guide:import
+pnpm dev:guide-api   # http://127.0.0.1:3001/api/v1/health
+pnpm dev:guide         # http://localhost:3002 （/api 反代到 3001）
+```
+
+游戏内录入的装备写在 `apps/guide-api/data/gear/*.yaml`；途径/技能解包 JSON 在 `apps/guide-api/data/sources/`（可从 `docs/游戏资料/` 同步更新，**部署包不含 `docs/`**）；封印物 Markdown 与图标在 `apps/guide/data/seals/`。改数据后重新 `pnpm guide:import`。
+
+### 生产部署（wiki 独立 compose）
+
+从 Windows 开发机一键上传并部署（与识单 `upload-and-deploy.ps1` 用法相同；可选 `-IdentityFile` 指定私钥）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/upload-and-deploy-guide.ps1 `
+  -Server 124.222.204.107 -User root -RemoteDir /opt/ocr-wy
+```
+
+脚本会排除 `.git`、`node_modules`、本地 `.env*`；服务器上已有的 `.env.guide.production` 与 `.env.production`（识单）均会保留。远程执行 `deploy/bootstrap-guide-centos.sh`：安装 Docker（若缺失）、生成/沿用环境变量、构建并启动 `docker-compose.guide.yml`，并尝试为 `GUIDE_CERTBOT_DOMAIN` 申请证书。
+
+已在 Linux 服务器上有代码时（项目根目录，需 root 或 sudo）：
+
+```bash
+cp deploy/.env.guide.production.example .env.guide.production
+# 编辑密码、GUIDE_WEB_ORIGIN、端口与 GUIDE_CERTBOT_DOMAIN=wiki.wuyouclub.online
+
+sudo bash deploy/bootstrap-guide-centos.sh
+```
+
+若 Docker 已就绪、只需重建容器，可只执行：
+
+```bash
+docker compose --env-file .env.guide.production -f docker-compose.guide.yml up -d --build
+```
+
+默认 **8080/8443** 映射，避免与识单 `docker-compose.prod.yml` 的 80/443 冲突。DNS 将 `wiki.wuyouclub.online` 指到服务器后，按需改端口或在前置 Nginx 按子域转发。首次 `SEED_GUIDE=true` 会在 migrate 后自动导入数据。

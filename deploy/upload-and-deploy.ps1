@@ -36,7 +36,8 @@ try {
         "--exclude=*/dist",
         "--exclude=.env",
         "--exclude=.env.production",
-        "--exclude=data"
+        "--exclude=/data",
+        "--exclude=docs"
     )
     if (Test-Path -LiteralPath $TarExcludeFile) {
         Get-Content -LiteralPath $TarExcludeFile -Encoding UTF8 | ForEach-Object {

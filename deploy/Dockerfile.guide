@@ -1,0 +1,35 @@
+FROM node:20-bookworm-slim AS build
+
+ARG NPM_REGISTRY=
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN set -eux; \
+    if [ -n "$NPM_REGISTRY" ]; then export COREPACK_NPM_REGISTRY="$NPM_REGISTRY"; fi; \
+    corepack enable && corepack prepare pnpm@10.18.0 --activate; \
+    if [ -n "$NPM_REGISTRY" ]; then pnpm config set registry "$NPM_REGISTRY"; fi
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/guide/package.json apps/guide/package.json
+COPY packages/guide-types/package.json packages/guide-types/package.json
+RUN pnpm install --frozen-lockfile
+
+COPY apps/guide apps/guide
+COPY packages/guide-types packages/guide-types
+ENV GUIDE_API_URL=http://guide-api:3001
+RUN pnpm --filter @ocr/guide-types build && pnpm --filter @ocr/guide build
+
+FROM node:20-bookworm-slim AS runtime
+
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+ENV GUIDE_API_URL=http://guide-api:3001
+
+WORKDIR /app
+COPY --from=build /app/apps/guide/.next/standalone ./
+COPY --from=build /app/apps/guide/.next/static ./apps/guide/.next/static
+COPY --from=build /app/apps/guide/data/seals ./apps/guide/data/seals
+
+EXPOSE 3000
+CMD ["node", "apps/guide/server.js"]

@@ -1,0 +1,4 @@
+{
+  "rateKeys": ["critRate", "critDamage"],
+  "rateCap": 1
+}
