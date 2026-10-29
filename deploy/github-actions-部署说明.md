@@ -5,7 +5,7 @@
 | 工作流 | 文件 | 触发 |
 |--------|------|------|
 | **CI** | `.github/workflows/ci.yml` | `push` / `pull_request` 到 `main` |
-| **Deploy** | `.github/workflows/deploy.yml` | `push` 到 `main`，或 Actions 页 **Run workflow** 手动选 `ocr` / `guide` / `both` |
+| **Deploy** | `.github/workflows/deploy.yml` | 仅 Actions 页 **Run workflow** 手动选 `ocr` / `guide` / `both`（push 不触发） |
 
 CI 在 GitHub 云端执行：`pnpm install` → 构建识单 + Guide → `pnpm check`（不连生产库、不部署）。
 
@@ -159,15 +159,11 @@ git push origin main
 
 打开 GitHub → **Actions** → **CI**，查看构建是否绿色。
 
-### 2. 自动部署（push main）
+### 2. 手动部署
 
-`main` 每次 push 会触发 **Deploy**（默认 `both`：执行 `bootstrap-dual-host-centos.sh` 一次完成双站 + 宿主机 Nginx）。若只想先 CI、暂不自动上线，可暂时在 `.github/workflows/deploy.yml` 里删掉 `push:` 段，仅保留 `workflow_dispatch`。
+GitHub → **Actions** → **Deploy** → **Run workflow** → 选择 `ocr` / `guide` / `both`（默认 `both` 会执行 `bootstrap-dual-host-centos.sh`）。
 
-### 3. 手动只部署某一栈
-
-GitHub → **Actions** → **Deploy** → **Run workflow** → 选择 `ocr` / `guide` / `both`。
-
-### 4. 服务器上查看结果
+### 3. 服务器上查看结果
 
 ```bash
 cd /opt/ocr-wy
@@ -177,20 +173,7 @@ docker compose --env-file .env.guide.production -f docker-compose.guide.yml ps
 
 ---
 
-## 五、可选：关闭 push 自动部署
-
-编辑 `.github/workflows/deploy.yml`，删除或注释：
-
-```yaml
-  push:
-    branches: [main]
-```
-
-仅保留 `workflow_dispatch`，则只在 Actions 手动点部署。
-
----
-
-## 六、与 Windows 上传脚本的关系
+## 五、与 Windows 上传脚本的关系
 
 | 方式 | 适用 |
 |------|------|
