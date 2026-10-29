@@ -159,12 +159,9 @@ compose_up_stacks() {
   docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --force-recreate web
 
   echo "构建并启动 Guide / wiki（回环 9081）..."
-  if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
-    docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --remove-orphans
-  else
-    docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --build --remove-orphans
-  fi
-  docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --force-recreate guide-proxy
+  # wiki 前端/API 必须随 git 更新重建；SKIP_BUILD 仅加快识单栈，不影响 Guide
+  docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --build --remove-orphans
+  docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --force-recreate guide-app guide-proxy
 }
 
 assert_loopback_upstreams() {

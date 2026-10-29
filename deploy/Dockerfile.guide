@@ -16,6 +16,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY apps/guide apps/guide
 COPY packages/guide-types packages/guide-types
+# 分享码导入等从 guide-api 同源 skill_names 反查中文名（构建期打进 Next 包）
+COPY apps/guide-api/data/sources/skill_names.json apps/guide-api/data/sources/skill_names.json
 ENV GUIDE_API_URL=http://guide-api:3001
 RUN pnpm --filter @ocr/guide-types build && pnpm --filter @ocr/guide build
 

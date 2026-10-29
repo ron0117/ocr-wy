@@ -161,7 +161,7 @@ git push origin main
 
 ### 2. 自动部署（push main）
 
-向 **`main` push** 后：先跑 **CI**，**绿色通过** 后会自动跑 **Deploy**（服务器 `git merge --ff-only` + `bootstrap-dual-host-centos.sh`，默认 `SKIP_BUILD=1` 加快发布）。**PR 的 CI 不会触发部署。**
+向 **`main` push** 后：先跑 **CI**，**绿色通过** 后会自动跑 **Deploy**（服务器 `git merge --ff-only` + `bootstrap-dual-host-centos.sh`）。自动部署时 **`SKIP_BUILD=1` 仅跳过识单镜像构建**；**Guide / wiki 仍会 `docker compose … --build` 并重建 `guide-app`**。**PR 的 CI 不会触发部署。**
 
 ### 3. 手动部署
 
