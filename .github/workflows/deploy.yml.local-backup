@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: 部署目标
+        type: choice
+        options:
+          - both
+          - ocr
+          - guide
+        default: both
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check deploy secrets
+        run: |
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ] || [ -z "${{ secrets.DEPLOY_USER }}" ] || [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ]; then
+            echo "::error::未配置 Deploy Secrets。请在 Settings → Secrets → Actions 添加 DEPLOY_HOST、DEPLOY_USER、DEPLOY_SSH_KEY。"
+            echo "说明见 deploy/github-actions-部署说明.md"
+            exit 1
+          fi
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          STACK: ${{ github.event_name == 'workflow_dispatch' && inputs.stack || 'both' }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          command_timeout: 90m
+          envs: STACK,DEPLOY_PATH,DEPLOY_BRANCH
+          script: |
+            set -Eeuo pipefail
+            path="${DEPLOY_PATH:-/opt/ocr-wy}"
+            branch="${DEPLOY_BRANCH:-main}"
+            if [[ ! "$path" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+              echo "DEPLOY_PATH 不安全: $path" >&2
+              exit 1
+            fi
+            if [[ ! -d "$path/.git" ]]; then
+              echo "未找到 Git 仓库: $path" >&2
+              exit 1
+            fi
+            cd "$path"
+            git remote -v
+            git fetch origin --prune
+            if ! git show-ref --verify --quiet "refs/remotes/origin/${branch}"; then
+              if git show-ref --verify --quiet refs/remotes/origin/master; then
+                branch=master
+                echo "未找到 origin/main，改用 origin/master"
+              else
+                echo "远程不存在 origin/${branch}，当前分支：" >&2
+                git branch -a >&2 || true
+                exit 1
+              fi
+            fi
+            # 去掉 tar/旧部署留下的未跟踪文件（不删 .gitignore 中的 .env*）
+            git clean -fd
+            git checkout -B "$branch" "origin/${branch}"
+            git reset --hard "origin/${branch}"
+            case "${STACK:-both}" in
+              ocr)
+                bash deploy/bootstrap-centos.sh
+                ;;
+              guide)
+                bash deploy/bootstrap-guide-centos.sh
+                ;;
+              both)
+                bash deploy/bootstrap-centos.sh
+                bash deploy/bootstrap-guide-centos.sh
+                ;;
+              *)
+                echo "未知 STACK: $STACK" >&2
+                exit 1
+                ;;
+            esac
