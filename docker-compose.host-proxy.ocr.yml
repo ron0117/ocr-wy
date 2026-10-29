@@ -5,7 +5,9 @@
 
 services:
   web:
+    # 覆盖 base 的 80/443 公网映射（Compose 2.24+）；旧版 compose 若仍占 80，见 deploy/同机双站-宿主机Nginx.md
     ports:
+      - !reset
       - "127.0.0.1:9080:80"
     environment:
-      CERTBOT_DOMAIN: ""
+      CERTBOT_DOMAIN: none

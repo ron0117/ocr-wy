@@ -8,6 +8,9 @@ fi
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
+# shellcheck source=deploy-common.sh
+source deploy/deploy-common.sh
+fix_deploy_script_crlf
 
 ENV_FILE=".env.guide.production"
 COMPOSE_FILE="docker-compose.guide.yml"
@@ -196,6 +199,7 @@ systemctl enable --now docker
 create_guide_env
 configure_build_mirrors
 ensure_certbot_env
+maybe_exec_dual_host_bootstrap
 configure_firewall
 
 echo "构建并启动 Guide 服务（首次构建可能需要数分钟）..."

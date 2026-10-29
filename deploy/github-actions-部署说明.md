@@ -98,11 +98,12 @@ cp /opt/ocr-wy.bak.*/.env.guide.production /opt/ocr-wy/ 2>/dev/null || true
 
 ```bash
 cd /opt/ocr-wy
-bash deploy/bootstrap-centos.sh
-bash deploy/bootstrap-guide-centos.sh
+# 识单 + wiki 同机（推荐，含宿主机 Nginx 分流）
+bash deploy/bootstrap-dual-host-centos.sh
+# 仅识单、容器自带 80/443 TLS：bash deploy/bootstrap-centos.sh
 ```
 
-宿主机 Nginx 双站方案见 [`同机双站-宿主机Nginx.md`](./同机双站-宿主机Nginx.md)。
+说明见 [`同机双站-宿主机Nginx.md`](./同机双站-宿主机Nginx.md)。服务器 `.env.production` 中 `DEPLOY_DUAL_HOST=true` 时，单独跑 `bootstrap-centos.sh` / `bootstrap-guide-centos.sh` 也会自动转双站脚本。
 
 ---
 
@@ -160,7 +161,7 @@ git push origin main
 
 ### 2. 自动部署（push main）
 
-`main` 每次 push 会触发 **Deploy**（`both`：识单 + Guide 依次 bootstrap）。若只想先 CI、暂不自动上线，可暂时在 `.github/workflows/deploy.yml` 里删掉 `push:` 段，仅保留 `workflow_dispatch`。
+`main` 每次 push 会触发 **Deploy**（默认 `both`：执行 `bootstrap-dual-host-centos.sh` 一次完成双站 + 宿主机 Nginx）。若只想先 CI、暂不自动上线，可暂时在 `.github/workflows/deploy.yml` 里删掉 `push:` 段，仅保留 `workflow_dispatch`。
 
 ### 3. 手动只部署某一栈
 

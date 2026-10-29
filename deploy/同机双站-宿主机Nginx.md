@@ -1,5 +1,15 @@
 # 同机双站：一个宿主机 Nginx 代理识单 + wiki
 
+## 一键部署（推荐）
+
+服务器已装 Docker、Git、Nginx 时，在项目根目录：
+
+```bash
+sudo bash deploy/bootstrap-dual-host-centos.sh
+```
+
+脚本会：写入 `OCR_PUBLISH_HTTP` / `GUIDE_PUBLISH_HTTP` 回环端口、启动两套 compose、配置宿主机 Nginx、申请含主域 + wiki 的证书并启用 HTTPS。需 `.env.production` 与 `.env.guide.production`（无则从 example 生成）。
+
 ## 现象
 
 访问 `https://wiki.wuyouclub.online/` 出现识单（「无忧俱乐部」）页面，或浏览器最终停在 `wuyouclub.online`。
@@ -54,6 +64,18 @@ curl -sI -H 'Host: wiki.wuyouclub.online' http://127.0.0.1:9081/ | head -1
 
 第二条应看到 Next 页面（标题「无忧玩家工具」），而不是识单。
 
+释放端口自检（**必须**无公网 `docker-proxy` 占 80/443）：
+
+```bash
+docker compose --env-file .env.production \
+  -f docker-compose.prod.yml -f docker-compose.host-proxy.ocr.yml \
+  config | sed -n '/^  web:/,/^  [a-z]/p' | grep ports -A5
+
+sudo ss -tlnp | grep -E ':80 |:443 '
+```
+
+若 `config` 里仍有 `"80:80"` / `"443:443"`，说明 compose 把 `ports` 叠在一起了；`docker-compose.host-proxy.*.yml` 已用 `!reset` 覆盖（需 Compose 2.24+）。旧版可临时在服务器只保留 `127.0.0.1:9080:80` 一行后 `up -d --force-recreate web`。
+
 ### 3. 部署宿主机站点配置
 
 ```bash
@@ -97,9 +119,11 @@ nginx -t && systemctl reload nginx
 
 识单仍占 443。此方案与「只有一个对外 Nginx」目标不一致，但改动最小。
 
-## 环境变量提醒
+## 环境变量（写在各自 prod `.env`）
 
-- 识单：`.env.production` 中 `WEB_ORIGIN=https://wuyouclub.online`
-- wiki：`.env.guide.production` 中 `GUIDE_WEB_ORIGIN=https://wiki.wuyouclub.online`
+| 文件 | 关键项 |
+|------|--------|
+| `.env.production` | `DEPLOY_DUAL_HOST=true`、`OCR_PUBLISH_HTTP=127.0.0.1:9080:80`、`OCR_CONTAINER_CERTBOT_DOMAIN=none`、`CERTBOT_DOMAIN` / `WEB_ORIGIN` |
+| `.env.guide.production` | `GUIDE_PUBLISH_HTTP=127.0.0.1:9081:80`、`GUIDE_CONTAINER_CERTBOT_DOMAIN=none`、`GUIDE_CERTBOT_DOMAIN` / `GUIDE_WEB_ORIGIN` |
 
-容器内不再签 TLS 时，可保留 `CERTBOT_DOMAIN` / `GUIDE_CERTBOT_DOMAIN` 在 env 文件中供记录，但 **host-proxy override 会清空容器内证书域名**，避免容器再次抢 443。
+模板见 `deploy/.env.production.example` 与 `deploy/.env.guide.production.example`。`bootstrap-dual-host-centos.sh` **不会覆盖**你已写好的键，只补缺失默认值。

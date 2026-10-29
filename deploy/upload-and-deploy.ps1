@@ -5,7 +5,9 @@
     [string]$User = "root",
     [string]$RemoteDir = "/opt/ocr-wy",
     [int]$Port = 22,
-    [string]$IdentityFile = ""
+    [string]$IdentityFile = "",
+    # 同机 wiki + 宿主机 Nginx：远程执行 bootstrap-dual-host-centos.sh（默认仅识单容器 80/443）
+    [switch]$DualHost
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,7 +59,8 @@ try {
     & scp @ScpArgs $Archive "${Target}:${RemoteArchive}"
     if ($LASTEXITCODE -ne 0) { throw "上传失败" }
 
-    $RemoteCommand = "mkdir -p '$RemoteDir' && if [ -f '$RemoteDir/.env.production' ]; then cp '$RemoteDir/.env.production' /tmp/ocr-wy.env.production; fi && find '$RemoteDir' -mindepth 1 -maxdepth 1 -exec rm -rf {} + && if [ -f /tmp/ocr-wy.env.production ]; then mv /tmp/ocr-wy.env.production '$RemoteDir/.env.production'; fi && tar -xzf '$RemoteArchive' -C '$RemoteDir' && rm -f '$RemoteArchive' && cd '$RemoteDir' && bash deploy/bootstrap-centos.sh"
+    $BootstrapScript = if ($DualHost) { "deploy/bootstrap-dual-host-centos.sh" } else { "deploy/bootstrap-centos.sh" }
+    $RemoteCommand = "mkdir -p '$RemoteDir' && if [ -f '$RemoteDir/.env.production' ]; then cp '$RemoteDir/.env.production' /tmp/ocr-wy.env.production; fi && if [ -f '$RemoteDir/.env.guide.production' ]; then cp '$RemoteDir/.env.guide.production' /tmp/ocr-wy.env.guide.production; fi && find '$RemoteDir' -mindepth 1 -maxdepth 1 -exec rm -rf {} + && if [ -f /tmp/ocr-wy.env.production ]; then mv /tmp/ocr-wy.env.production '$RemoteDir/.env.production'; fi && if [ -f /tmp/ocr-wy.env.guide.production ]; then mv /tmp/ocr-wy.env.guide.production '$RemoteDir/.env.guide.production'; fi && tar -xzf '$RemoteArchive' -C '$RemoteDir' && rm -f '$RemoteArchive' && cd '$RemoteDir' && sed -i 's/\r$//' deploy/bootstrap-dual-host-centos.sh deploy/deploy-common.sh deploy/bootstrap-centos.sh 2>/dev/null || true && bash $BootstrapScript"
     Write-Host "正在远程部署..."
     & ssh @SshArgs $Target $RemoteCommand
     if ($LASTEXITCODE -ne 0) { throw "远程部署失败" }

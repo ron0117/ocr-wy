@@ -186,7 +186,7 @@ powershell -ExecutionPolicy Bypass -File deploy/upload-and-deploy-guide.ps1 `
   -Server 124.222.204.107 -User root -RemoteDir /opt/ocr-wy
 ```
 
-脚本会排除 `.git`、`node_modules`、本地 `.env*`；服务器上已有的 `.env.guide.production` 与 `.env.production`（识单）均会保留。远程执行 `deploy/bootstrap-guide-centos.sh`：安装 Docker（若缺失）、生成/沿用环境变量、构建并启动 `docker-compose.guide.yml`，并尝试为 `GUIDE_CERTBOT_DOMAIN` 申请证书。
+脚本会排除 `.git`、`node_modules`、本地 `.env*`；服务器上已有的 `.env.guide.production` 与 `.env.production`（识单）均会保留。远程在构建成功后自动执行 **`deploy/bootstrap-dual-host-centos.sh`**（识单 + wiki + 宿主机 Nginx 分流）。
 
 已在 Linux 服务器上有代码时（项目根目录，需 root 或 sudo）：
 
@@ -205,4 +205,10 @@ docker compose --env-file .env.guide.production -f docker-compose.guide.yml up -
 
 默认 **8080/8443** 映射，避免与识单 `docker-compose.prod.yml` 的 80/443 冲突。DNS 将 `wiki.wuyouclub.online` 指到服务器后，按需改端口或在前置 Nginx 按子域转发。首次 `SEED_GUIDE=true` 会在 migrate 后自动导入数据。
 
-**同机只有一个对外 Nginx（推荐）**：若 wiki 与主站共用 CDN 回源 443，源站必须按 `Host` 分流，否则 wiki 会显示识单页。见 [`deploy/同机双站-宿主机Nginx.md`](deploy/同机双站-宿主机Nginx.md) 与 `deploy/nginx.host.dual.conf.example`、`docker-compose.host-proxy.*.yml`。
+**同机只有一个对外 Nginx（推荐）**：若 wiki 与主站共用 CDN 回源 443，源站必须按 `Host` 分流，否则 wiki 会显示识单页。一键脚本：
+
+```bash
+sudo bash deploy/bootstrap-dual-host-centos.sh
+```
+
+详见 [`deploy/同机双站-宿主机Nginx.md`](deploy/同机双站-宿主机Nginx.md)。

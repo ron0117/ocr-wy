@@ -53,16 +53,13 @@ jobs:
             git fetch origin "$branch"
             git checkout "$branch"
             git merge --ff-only "origin/$branch"
+            sed -i 's/\r$//' deploy/bootstrap-dual-host-centos.sh deploy/deploy-common.sh 2>/dev/null || true
             case "${STACK:-both}" in
               ocr)
                 bash deploy/bootstrap-centos.sh
                 ;;
-              guide)
-                bash deploy/bootstrap-guide-centos.sh
-                ;;
-              both)
-                bash deploy/bootstrap-centos.sh
-                bash deploy/bootstrap-guide-centos.sh
+              guide|both)
+                bash deploy/bootstrap-dual-host-centos.sh
                 ;;
               *)
                 echo "未知 STACK: $STACK" >&2

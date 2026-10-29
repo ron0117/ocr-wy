@@ -6,6 +6,7 @@
 services:
   guide-proxy:
     ports:
+      - !reset
       - "127.0.0.1:9081:80"
     environment:
-      GUIDE_CERTBOT_DOMAIN: ""
+      GUIDE_CERTBOT_DOMAIN: none

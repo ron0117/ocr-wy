@@ -2,6 +2,9 @@
 set -eu
 
 domain="${GUIDE_CERTBOT_DOMAIN:-}"
+if [ "$domain" = "none" ]; then
+  domain=""
+fi
 cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
 
 if [ -n "$domain" ] && [ -f "$cert" ]; then

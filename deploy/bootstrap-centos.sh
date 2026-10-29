@@ -8,6 +8,9 @@ fi
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
+# shellcheck source=deploy-common.sh
+source deploy/deploy-common.sh
+fix_deploy_script_crlf
 
 write_docker_repo() {
   local mirror="$1"
@@ -140,6 +143,7 @@ systemctl enable --now docker
 create_env
 configure_build_mirrors
 ensure_super_admin_env
+maybe_exec_dual_host_bootstrap
 
 ensure_certbot_env() {
   if ! grep -q '^CERTBOT_DOMAIN=' .env.production; then

@@ -21,7 +21,7 @@ upstream guide_wiki {
 
 server {
     listen 80;
-    server_name wuyouclub.online wiki.wuyouclub.online;
+    server_name __MAIN_DOMAIN__ __WIKI_DOMAIN__;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -34,11 +34,11 @@ server {
 
 server {
     listen 443 ssl;
-    server_name wuyouclub.online;
+    server_name __MAIN_DOMAIN__;
     client_max_body_size 30m;
 
-    ssl_certificate     /etc/letsencrypt/live/wuyouclub.online/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/wuyouclub.online/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/__CERT_PRIMARY__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__CERT_PRIMARY__/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_session_cache   shared:SSL:10m;
     ssl_session_timeout 1d;
@@ -58,11 +58,12 @@ server {
 
 server {
     listen 443 ssl;
-    server_name wiki.wuyouclub.online;
+    server_name __WIKI_DOMAIN__;
     client_max_body_size 512k;
 
-    ssl_certificate     /etc/letsencrypt/live/wiki.wuyouclub.online/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/wiki.wuyouclub.online/privkey.pem;
+    # 与主站共用一张 SAN 证（certbot -d 主域 -d wiki）时路径与主站相同
+    ssl_certificate     /etc/letsencrypt/live/__CERT_PRIMARY__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__CERT_PRIMARY__/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_session_cache   shared:SSL:10m;
     ssl_session_timeout 1d;
