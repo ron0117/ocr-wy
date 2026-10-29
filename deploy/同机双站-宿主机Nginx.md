@@ -107,6 +107,8 @@ nginx -t && systemctl reload nginx
 
 源站必须是 **按 Host 分流的宿主机 Nginx**（上一节）。改完后在 CDN 控制台 **刷新** wiki 域名缓存。
 
+**EdgeOne 回源 HTTP 80 时**：源站 **不能** 对 wiki/主域在 80 上统一 `return 301 https`（否则边缘 HTTPS + 源站 301 会死循环，Next `/_next/static` 全失败）。使用 `nginx.host.dual.conf.example` 中「80 分域名反代」版本。
+
 若暂时不用 CDN 调试：把 `wiki` 的 DNS 改为 **A 记录直连源站 IP**，验证通过后再接 CDN。
 
 ### 5. 备选：wiki 单独回源 8443

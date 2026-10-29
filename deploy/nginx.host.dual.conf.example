@@ -19,16 +19,44 @@ upstream guide_wiki {
     keepalive 8;
 }
 
+# 80：EdgeOne/CDN 常用 HTTP 回源，此处必须反代，不能 301 到 https（否则边缘 HTTPS + 源站 301 会死循环，/_next 等静态资源全挂）
 server {
     listen 80;
-    server_name __MAIN_DOMAIN__ __WIKI_DOMAIN__;
+    server_name __MAIN_DOMAIN__;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
     location / {
-        return 301 https://$host$request_uri;
+        proxy_pass http://ocr_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+    }
+}
+
+server {
+    listen 80;
+    server_name __WIKI_DOMAIN__;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        proxy_pass http://guide_wiki;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Connection "";
     }
 }
 
@@ -74,7 +102,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto https;
         proxy_set_header Connection "";
     }
 }

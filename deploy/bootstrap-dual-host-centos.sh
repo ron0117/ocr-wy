@@ -149,20 +149,21 @@ configure_firewall() {
 }
 
 compose_up_stacks() {
-  local build_args=()
-  if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
-    build_args=()
-  else
-    build_args=(--build)
-  fi
-
   export COMPOSE_PARALLEL_LIMIT=1
   echo "构建并启动识单（回环 9080）..."
-  docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d "${build_args[@]}" --remove-orphans
+  if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
+    docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --remove-orphans
+  else
+    docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --build --remove-orphans
+  fi
   docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --force-recreate web
 
   echo "构建并启动 Guide / wiki（回环 9081）..."
-  docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d "${build_args[@]}" --remove-orphans
+  if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
+    docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --remove-orphans
+  else
+    docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --build --remove-orphans
+  fi
   docker compose --env-file "$GUIDE_ENV" -f docker-compose.guide.yml up -d --force-recreate guide-proxy
 }
 
