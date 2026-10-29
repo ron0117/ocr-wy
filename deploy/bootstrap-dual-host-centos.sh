@@ -243,15 +243,27 @@ issue_host_certificate() {
 
 smoke_test() {
   echo "本机探活..."
-  curl -fsS -o /dev/null -H "Host: ${WIKI_DOMAIN}" "http://127.0.0.1/api/v1/health" || true
-  if host_cert_exists; then
-    curl -fsSk -o /dev/null -H "Host: ${WIKI_DOMAIN}" "https://127.0.0.1/"
-    curl -fsSk -o /dev/null -H "Host: ${MAIN_DOMAIN}" "https://127.0.0.1/"
+  if ! ss -tlnp 2>/dev/null | grep -E ':443 ' | grep -q nginx; then
+    echo "源站 443 未由 nginx 监听，CDN HTTPS 会 521。请检查：nginx -t、证书路径、systemctl status nginx" >&2
+    ss -tlnp | grep -E ':80 |:443 ' || true
+    exit 1
   fi
+  curl -fsS -o /dev/null -H "Host: ${WIKI_DOMAIN}" "http://127.0.0.1/api/v1/health" || {
+    echo "宿主机 Nginx 未把 wiki 的 /api 反代到 9081" >&2
+    exit 1
+  }
+  local wiki_html
+  wiki_html="$(curl -fsS -H "Host: ${WIKI_DOMAIN}" "http://127.0.0.1/" | head -c 4096)"
+  if echo "$wiki_html" | grep -q '无忧俱乐部'; then
+    echo "wiki Host 仍返回识单页，请检查 /etc/nginx/conf.d/wuyouclub-dual.conf 与 9081" >&2
+    exit 1
+  fi
+  curl -fsSk -o /dev/null -H "Host: ${WIKI_DOMAIN}" "https://127.0.0.1/"
+  curl -fsSk -o /dev/null -H "Host: ${MAIN_DOMAIN}" "https://127.0.0.1/"
   echo "完成。请在浏览器访问："
   echo "  https://${MAIN_DOMAIN}/  （识单）"
   echo "  https://${WIKI_DOMAIN}/   （wiki）"
-  echo "若走腾讯云 CDN，请刷新 wiki 域名缓存。"
+  echo "若走腾讯云 CDN，请刷新两个域名缓存。"
 }
 
 # --- main ---
