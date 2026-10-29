@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "pnpm --filter @ocr/guide-types build",
+    "predev": "node ../../scripts/ensure-guide-skill-names.mjs && pnpm --filter @ocr/guide-types build",
     "dev": "next dev -p 3002",
-    "prebuild": "pnpm --filter @ocr/guide-types build",
+    "prebuild": "node ../../scripts/ensure-guide-skill-names.mjs && pnpm --filter @ocr/guide-types build",
     "build": "next build",
     "start": "next start -p 3002"
   },

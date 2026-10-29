@@ -17,6 +17,7 @@ packages/shared-types/dist
 packages/guide-types/dist
 apps/guide-api/src/generated
 apps/guide/.next
+apps/guide/data/skill_names.json
 apps/guide-api/dist
 .prisma
 coverage

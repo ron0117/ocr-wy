@@ -175,7 +175,7 @@ pnpm dev:guide-api   # http://127.0.0.1:3001/api/v1/health
 pnpm dev:guide         # http://localhost:3002 （/api 反代到 3001）
 ```
 
-游戏内录入的装备写在 `apps/guide-api/data/gear/*.yaml`；途径/技能解包 JSON 在 `apps/guide-api/data/sources/`（可从 `docs/游戏资料/` 同步更新，**部署包不含 `docs/`**）；封印物 Markdown 与图标在 `apps/guide/data/seals/`。改数据后重新 `pnpm guide:import`。
+游戏内录入的装备写在 `apps/guide-api/data/gear/*.yaml`；途径/技能解包 JSON 在 `apps/guide-api/data/sources/`（可从 `docs/游戏资料/` 同步更新，**部署包不含 `docs/`**）；封印物 Markdown 与图标在 `apps/guide/data/seals/`。改数据后重新 `pnpm guide:import`。分享码技能名反查会在 `pnpm dev:guide` / `pnpm build` 前自动把 `skill_names.json` 同步到 `apps/guide/data/`（源文件在 `apps/guide-api/data/sources/`）。
 
 ### 生产部署（wiki 独立 compose）
 
