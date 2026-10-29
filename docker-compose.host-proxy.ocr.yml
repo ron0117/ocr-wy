@@ -1,0 +1,11 @@
+# 叠加 docker-compose.prod.yml：OCR 容器 Nginx 仅 127.0.0.1:9080 HTTP，TLS 由宿主机 Nginx 处理。
+#
+# docker compose --env-file .env.production \
+#   -f docker-compose.prod.yml -f docker-compose.host-proxy.ocr.yml up -d --build
+
+services:
+  web:
+    ports:
+      - "127.0.0.1:9080:80"
+    environment:
+      CERTBOT_DOMAIN: ""

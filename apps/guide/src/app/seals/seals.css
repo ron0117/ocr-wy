@@ -1,0 +1,147 @@
+.seals-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.seals-intro {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  max-width: 36rem;
+  line-height: 1.5;
+}
+
+.seals-category {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.seals-category-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+
+.seals-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.65rem;
+}
+
+.seal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 0.5rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.seal-card:hover {
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-2px);
+}
+
+.seal-card-icon {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 25%);
+}
+
+.seal-card-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--gold);
+  line-height: 1.25;
+}
+
+.seal-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.seal-detail-icon {
+  width: 5.5rem;
+  height: 5.5rem;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: rgb(0 0 0 / 28%);
+  flex-shrink: 0;
+}
+
+.seal-detail-meta h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 4vw, 1.65rem);
+  color: var(--gold);
+}
+
+.seal-detail-tag {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-gold);
+  color: var(--gold-muted);
+}
+
+.seal-detail-section {
+  padding: 1rem 1.05rem;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid rgb(197 160 89 / 12%);
+}
+
+.seal-detail-section h2 {
+  margin: 0 0 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+
+.seal-detail-section p,
+.seal-detail-section li {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+.seal-detail-section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.seal-detail-section p + p,
+.seal-detail-section p + ul,
+.seal-detail-section ul + p {
+  margin-top: 0.45rem;
+}
+
+.seal-detail-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--gold-muted);
+}

@@ -1,0 +1,15 @@
+{
+    "schema_version":  1,
+    "backend":  "windows_raw",
+    "display_version":  "0.4.1b",
+    "data_directory":  "GMZZDpsMeter",
+    "mutex_name":  "",
+    "tray_class_prefix":  "",
+    "packet_capture":  "windows_raw",
+    "passive_capture":  true,
+    "native_ipv4_capture":  "windows_raw_socket",
+    "native_ipv6_capture":  "windivert_sniff_receive_only",
+    "packet_transmit_functions_loaded":  false,
+    "server_requests_added":  2,
+    "game_process_access":  "query_read_write_bounded_rpc_hooks"
+}

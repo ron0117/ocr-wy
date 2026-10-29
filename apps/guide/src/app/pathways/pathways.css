@@ -1,0 +1,66 @@
+.pathways-title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.45rem, 3.5vw, 1.75rem);
+  letter-spacing: 0.03em;
+  color: var(--gold);
+}
+
+.pathways-sub {
+  margin: 0 0 1.35rem;
+  font-size: 0.875rem;
+}
+
+.pathway-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.85rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pathway-card {
+  display: block;
+  height: 100%;
+  padding: 1.05rem 0.95rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.pathway-card:hover {
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-2px);
+}
+
+.pathway-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pathway-card-deity {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.pathway-card-profession {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--gold);
+}
+
+.pathway-card-route {
+  margin-top: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}

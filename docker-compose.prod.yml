@@ -60,6 +60,9 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         NPM_REGISTRY: ${NPM_REGISTRY:-}
+        VITE_PUBLIC_ASSET_CDN: ${VITE_PUBLIC_ASSET_CDN:-}
+        VITE_PUBLIC_ASSET_OMIT_LOCAL: ${VITE_PUBLIC_ASSET_OMIT_LOCAL:-}
+        VITE_PUBLIC_ASSET_KEY_PREFIX: ${VITE_PUBLIC_ASSET_KEY_PREFIX:-}
     restart: unless-stopped
     environment:
       CERTBOT_DOMAIN: ${CERTBOT_DOMAIN:-}

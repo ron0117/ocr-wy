@@ -1,0 +1,230 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../../apps/guide-api/src/generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("GUIDE_DATABASE_URL")
+}
+
+enum GearSlot {
+  HEAD
+  CHEST
+  LEGS
+  FEET
+  HANDS
+  WEAPON
+  OFFHAND
+  ACCESSORY
+  SEAL
+}
+
+enum GearRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum SkillType {
+  ACTIVE
+  PASSIVE
+  ULT
+  UNKNOWN
+}
+
+enum ImportRunStatus {
+  SUCCESS
+  FAILED
+}
+
+model GameVersion {
+  id         String    @id @default(uuid())
+  semver     String
+  label      String?
+  releasedAt DateTime?
+  isCurrent  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  pathways     Pathway[]
+  scenarios    PlayScenario[]
+  skills       Skill[]
+  gearSets     GearSet[]
+  gears        Gear[]
+  loadouts     RecommendedLoadout[]
+  sharedBuilds SharedBuild[]
+  importRuns   ImportRun[]
+}
+
+model Pathway {
+  id          String    @id @default(uuid())
+  versionId   String
+  externalId  String
+  slug        String
+  name        String
+  description String?
+  sortOrder   Int       @default(0)
+  sourceNote  String?
+  verifiedAt  DateTime?
+  isStale     Boolean   @default(false)
+
+  version      GameVersion          @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  skills       Skill[]
+  loadouts     RecommendedLoadout[]
+  sharedBuilds SharedBuild[]
+
+  @@unique([versionId, slug])
+  @@unique([versionId, externalId])
+  @@index([versionId])
+}
+
+model PlayScenario {
+  id         String    @id @default(uuid())
+  versionId  String
+  code       String
+  name       String
+  sourceNote String?
+  verifiedAt DateTime?
+
+  version      GameVersion          @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  loadouts     RecommendedLoadout[]
+  sharedBuilds SharedBuild[]
+
+  @@unique([versionId, code])
+}
+
+model Skill {
+  id          String    @id @default(uuid())
+  versionId   String
+  externalId  String
+  slug        String
+  name        String
+  pathwayId   String?
+  skillType   SkillType @default(UNKNOWN)
+  iconRef     String?
+  cooldownMs  Int?
+  energyCost  Int?
+  tags        Json?
+  sourceNote  String?
+  verifiedAt  DateTime?
+  isStale     Boolean   @default(false)
+
+  version GameVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  pathway Pathway?    @relation(fields: [pathwayId], references: [id])
+
+  @@unique([versionId, slug])
+  @@unique([versionId, externalId])
+  @@index([pathwayId])
+}
+
+model GearSet {
+  id         String    @id @default(uuid())
+  versionId  String
+  externalId String?
+  name       String
+  effects    Json
+  sourceNote String?
+  verifiedAt DateTime?
+
+  version GameVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  gears   Gear[]
+
+  @@unique([versionId, name])
+}
+
+model Gear {
+  id           String     @id @default(uuid())
+  versionId    String
+  slug         String
+  name         String
+  slot         GearSlot
+  rarity       GearRarity @default(COMMON)
+  baseStats    Json
+  affixes      Json       @default("[]")
+  setId        String?
+  restrictions Json?
+  sourceNote   String?
+  verifiedAt   DateTime?
+  isStale      Boolean    @default(false)
+
+  version GameVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  gearSet GearSet?    @relation(fields: [setId], references: [id])
+
+  @@unique([versionId, slug])
+  @@index([versionId, slot])
+}
+
+model RecommendedLoadout {
+  id         String    @id @default(uuid())
+  versionId  String
+  slug       String
+  title      String
+  pathwayId  String
+  scenarioId String?
+  gearSlots  Json
+  skillBar   Json?
+  comboSteps Json
+  notes      String?
+  sourceNote String?
+  verifiedAt DateTime?
+
+  version  GameVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  pathway  Pathway       @relation(fields: [pathwayId], references: [id])
+  scenario PlayScenario? @relation(fields: [scenarioId], references: [id])
+
+  @@unique([versionId, slug])
+}
+
+model SharedBuild {
+  id              String   @id @db.VarChar(16)
+  versionId       String
+  pathwayId       String
+  scenarioId      String?
+  /** 游戏内复制的一整段分享文案（含 [[分享码]]） */
+  shareText       String   @db.Text
+  /** 列表展示：作者 · 方案名 */
+  title           String?
+  authorName      String?
+  comboStepCount  Int      @default(0)
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  version  GameVersion   @relation(fields: [versionId], references: [id])
+  pathway  Pathway       @relation(fields: [pathwayId], references: [id])
+  scenario PlayScenario? @relation(fields: [scenarioId], references: [id])
+
+  @@index([createdAt])
+}
+
+model ImportRun {
+  id           String          @id @default(uuid())
+  versionId    String?
+  startedAt    DateTime        @default(now())
+  finishedAt   DateTime?
+  manifestHash String?
+  gameVersion  String?
+  status       ImportRunStatus
+  log          String?
+
+  version GameVersion? @relation(fields: [versionId], references: [id])
+}
+
+/** 玩家投稿攻略（图文 HTML，图片存 COS /wiki/ 前缀） */
+model GuideArticle {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  authorName  String
+  summary     String?  @db.VarChar(500)
+  bodyHtml    String   @db.Text
+  coverUrl    String?
+  pathwaySlug String?  @db.VarChar(64)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+}

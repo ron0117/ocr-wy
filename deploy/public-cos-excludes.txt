@@ -1,0 +1,6 @@
+# 由 scripts/sync-public-cos-excludes.ts 生成，勿手改
+# 登记变更：apps/web/public-asset-pages.ts → pnpm upload:public-cos
+apps/web/public/20261027/wechat-article-background-original.png
+apps/web/public/20261027/众神之战.jpg
+apps/web/public/20261027/无忧仙境活动.png
+apps/web/public/20261027/视频.mp4

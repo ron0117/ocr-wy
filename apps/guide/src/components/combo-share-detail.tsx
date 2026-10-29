@@ -1,0 +1,107 @@
+import { SealsDisplaySection } from '@/components/seals-display';
+import {
+  enrichImportedSkills,
+  parseGameSharePaste,
+  type ShareDto,
+  type SkillDto,
+} from '@ocr/guide-types';
+
+type Props = {
+  share: ShareDto;
+  skills: SkillDto[];
+};
+
+function formatSavedAt(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString('zh-CN', { hour12: false });
+  } catch {
+    return iso;
+  }
+}
+
+export function ComboShareDetail({ share, skills }: Props) {
+  let parseError: string | null = null;
+  let view = null;
+  try {
+    const parsed = parseGameSharePaste(share.shareText);
+    view = enrichImportedSkills(
+      { ...parsed, importedAt: share.createdAt },
+      new Map(skills.map((s) => [s.externalId, s.name])),
+    );
+  } catch (e) {
+    parseError = e instanceof Error ? e.message : '文案解析失败';
+  }
+
+  const scenarioLabel = share.scenarioName ?? share.scenarioCode ?? '—';
+
+  return (
+    <div className="code-detail">
+      <header className="code-detail-header">
+        <p className="code-detail-tags">
+          <span className="build-badge">途径 · {share.pathwayProfessionLabel}</span>
+          <span className="build-badge build-badge-muted">
+            场景 · {scenarioLabel}
+          </span>
+        </p>
+        <h1>{share.title ?? share.authorName ?? '连招分享'}</h1>
+        <p className="muted code-detail-meta">
+          保存于 {formatSavedAt(share.createdAt)}
+          {share.comboStepCount ? ` · ${share.comboStepCount} 步连招` : null}
+        </p>
+      </header>
+
+      {parseError ? (
+        <div className="build-error">{parseError}</div>
+      ) : view ? (
+        <>
+          <div className="import-author-card">
+            <div className="import-author-name">{view.author}</div>
+            {view.planTitle ? (
+              <p className="muted import-author-meta">方案「{view.planTitle}」</p>
+            ) : null}
+          </div>
+
+          {view.comboSteps.length ? (
+            <section className="code-detail-section">
+              <h2>连招顺序</h2>
+              <ol className="combo-list combo-list-readonly">
+                {view.comboSteps.map((name, idx) => (
+                  <li key={`${name}-${idx}`} className="combo-item">
+                    <span className="combo-index">{idx + 1}</span>
+                    <div className="combo-item-body">
+                      <div className="combo-item-title">{name}</div>
+                      {view.skills[idx]?.externalId ? (
+                        <div className="combo-item-slug">
+                          ID {view.skills[idx]!.externalId}
+                          {view.skills[idx]!.barSlot
+                            ? ` · 栏位 ${view.skills[idx]!.barSlot}`
+                            : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+
+          <SealsDisplaySection sealNames={view.seals} variant="detail" />
+
+          {view.awakening.map((g) => (
+            <p key={g.label} className="import-extra muted">
+              觉醒（{g.label}）：{g.names.join('、')}
+            </p>
+          ))}
+          {view.assistLabel ? (
+            <p className="import-extra muted">一键辅助：{view.assistLabel}</p>
+          ) : null}
+
+          <section className="code-detail-section">
+            <h2>原始分享文案</h2>
+            <pre className="code-detail-raw">{share.shareText}</pre>
+          </section>
+        </>
+      ) : null}
+    </div>
+  );
+}
