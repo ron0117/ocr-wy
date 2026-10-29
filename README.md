@@ -107,6 +107,8 @@ sudo bash deploy/bootstrap-centos.sh
 sudo bash install-from-git.sh https://github.com/你的账号/ocr-wy.git /opt/ocr-wy main
 ```
 
+**GitHub Actions 自动构建 / SSH 部署**（CI 在云端编译，Deploy 合并 `main` 后跑 `bootstrap-*.sh`）：见 [`deploy/github-actions-部署说明.md`](deploy/github-actions-部署说明.md)。
+
 如果仓库已经位于 `/opt/ocr-wy`，脚本只接受可以快进合并的更新，不会强制覆盖
 服务器上的代码。私有仓库建议使用 SSH 仓库地址，并提前配置服务器的部署密钥。
 
@@ -202,3 +204,5 @@ docker compose --env-file .env.guide.production -f docker-compose.guide.yml up -
 ```
 
 默认 **8080/8443** 映射，避免与识单 `docker-compose.prod.yml` 的 80/443 冲突。DNS 将 `wiki.wuyouclub.online` 指到服务器后，按需改端口或在前置 Nginx 按子域转发。首次 `SEED_GUIDE=true` 会在 migrate 后自动导入数据。
+
+**同机只有一个对外 Nginx（推荐）**：若 wiki 与主站共用 CDN 回源 443，源站必须按 `Host` 分流，否则 wiki 会显示识单页。见 [`deploy/同机双站-宿主机Nginx.md`](deploy/同机双站-宿主机Nginx.md) 与 `deploy/nginx.host.dual.conf.example`、`docker-compose.host-proxy.*.yml`。

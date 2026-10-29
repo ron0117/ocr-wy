@@ -1,6 +1,8 @@
 FROM nginx:1.27-alpine
+COPY deploy/nginx.00-performance.conf /etc/nginx/conf.d/00-performance.conf
 COPY deploy/nginx.guide.http.conf /opt/nginx/http.conf
 COPY deploy/nginx.guide.https.conf /opt/nginx/https.conf
+COPY deploy/nginx.proxy-params.inc /opt/nginx/proxy-params.inc
 COPY deploy/guide-web-entrypoint.sh /guide-entrypoint.sh
 RUN chmod +x /guide-entrypoint.sh
 EXPOSE 80 443

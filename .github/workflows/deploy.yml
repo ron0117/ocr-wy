@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: 部署目标
+        type: choice
+        options:
+          - both
+          - ocr
+          - guide
+        default: both
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          STACK: ${{ github.event_name == 'workflow_dispatch' && inputs.stack || 'both' }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          command_timeout: 90m
+          envs: STACK,DEPLOY_PATH,DEPLOY_BRANCH
+          script: |
+            set -Eeuo pipefail
+            path="${DEPLOY_PATH:-/opt/ocr-wy}"
+            branch="${DEPLOY_BRANCH:-main}"
+            if [[ ! "$path" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+              echo "DEPLOY_PATH 不安全: $path" >&2
+              exit 1
+            fi
+            if [[ ! -d "$path/.git" ]]; then
+              echo "未找到 Git 仓库: $path（请先在服务器 clone，见 deploy/github-actions-部署说明.md）" >&2
+              exit 1
+            fi
+            cd "$path"
+            git fetch origin "$branch"
+            git checkout "$branch"
+            git merge --ff-only "origin/$branch"
+            case "${STACK:-both}" in
+              ocr)
+                bash deploy/bootstrap-centos.sh
+                ;;
+              guide)
+                bash deploy/bootstrap-guide-centos.sh
+                ;;
+              both)
+                bash deploy/bootstrap-centos.sh
+                bash deploy/bootstrap-guide-centos.sh
+                ;;
+              *)
+                echo "未知 STACK: $STACK" >&2
+                exit 1
+                ;;
+            esac

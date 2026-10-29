@@ -25,8 +25,10 @@ ENV VITE_PUBLIC_ASSET_KEY_PREFIX=$VITE_PUBLIC_ASSET_KEY_PREFIX
 RUN pnpm --filter @ocr/web build
 
 FROM nginx:1.27-alpine
+COPY deploy/nginx.00-performance.conf /etc/nginx/conf.d/00-performance.conf
 COPY deploy/nginx.http.conf /opt/nginx/http.conf
 COPY deploy/nginx.https.conf /opt/nginx/https.conf
+COPY deploy/nginx.proxy-params.inc /opt/nginx/proxy-params.inc
 COPY deploy/web-entrypoint.sh /web-entrypoint.sh
 RUN chmod +x /web-entrypoint.sh
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html

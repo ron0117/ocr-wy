@@ -1,0 +1,11 @@
+# 叠加 docker-compose.guide.yml：Guide 反代仅 127.0.0.1:9081 HTTP，TLS 由宿主机 Nginx 处理。
+#
+# docker compose --env-file .env.guide.production \
+#   -f docker-compose.guide.yml -f docker-compose.host-proxy.guide.yml up -d --build
+
+services:
+  guide-proxy:
+    ports:
+      - "127.0.0.1:9081:80"
+    environment:
+      GUIDE_CERTBOT_DOMAIN: ""
