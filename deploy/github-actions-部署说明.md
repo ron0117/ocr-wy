@@ -5,7 +5,7 @@
 | 工作流 | 文件 | 触发 |
 |--------|------|------|
 | **CI** | `.github/workflows/ci.yml` | `push` / `pull_request` 到 `main` |
-| **Deploy** | `.github/workflows/deploy.yml` | 仅 Actions 页 **Run workflow** 手动选 `ocr` / `guide` / `both`（push 不触发） |
+| **Deploy** | `.github/workflows/deploy.yml` | **`main` push 且 CI 成功后**自动 SSH 部署；或 Actions 页 **Run workflow** 手动部署 |
 
 CI 在 GitHub 云端执行：`pnpm install` → 构建识单 + Guide → `pnpm check`（不连生产库、不部署）。
 
@@ -159,11 +159,15 @@ git push origin main
 
 打开 GitHub → **Actions** → **CI**，查看构建是否绿色。
 
-### 2. 手动部署
+### 2. 自动部署（push main）
 
-GitHub → **Actions** → **Deploy** → **Run workflow** → 选择 `ocr` / `guide` / `both`（默认 `both` 会执行 `bootstrap-dual-host-centos.sh`）。
+向 **`main` push** 后：先跑 **CI**，**绿色通过** 后会自动跑 **Deploy**（服务器 `git merge --ff-only` + `bootstrap-dual-host-centos.sh`，默认 `SKIP_BUILD=1` 加快发布）。**PR 的 CI 不会触发部署。**
 
-### 3. 服务器上查看结果
+### 3. 手动部署
+
+GitHub → **Actions** → **Deploy** → **Run workflow** → 选择 `ocr` / `guide` / `both`（会完整 `--build` 除非自行改 workflow）。
+
+### 4. 服务器上查看结果
 
 ```bash
 cd /opt/ocr-wy
