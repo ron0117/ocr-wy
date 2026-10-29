@@ -23,9 +23,10 @@ function loadEnvFile(path: string, override: boolean) {
   }
 }
 
-/** 加载 guide 库连接串；guide-api/.env 覆盖根 .env */
+/** 加载 guide 库连接串；优先级：.env.example < .env < apps/guide-api/.env */
 export function loadGuideEnv(): void {
   const root = resolve(import.meta.dirname, '..');
+  loadEnvFile(resolve(root, '.env.example'), false);
   loadEnvFile(resolve(root, '.env'), false);
   loadEnvFile(resolve(root, 'apps/guide-api/.env'), true);
 

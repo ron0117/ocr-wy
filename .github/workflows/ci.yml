@@ -32,6 +32,9 @@ jobs:
         run: pnpm build
 
       - name: Build Guide (wiki)
+        env:
+          # prisma generate 仅需合法 URL，不连库；无 .env 时用 example 默认值
+          GUIDE_DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/guide?schema=public
         run: pnpm build:guide
 
       - name: API self-check
