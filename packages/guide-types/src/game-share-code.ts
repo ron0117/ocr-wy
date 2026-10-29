@@ -218,18 +218,40 @@ export function buildGameSharePayload(input: GameShareFormatInput): Record<strin
 
 export type DecodedGameSharePayload = Record<string, MsgValue>;
 
+/** 一键辅助宏里单步动作（来自分享码键 `10.c`） */
+export type GameShareAssistAction = {
+  actionParam: number;
+  actionName: number;
+  /** 形如 86051090 的游戏技能 ID，非技能类参数则无 */
+  externalId?: string;
+  name: string;
+};
+
+export type GameShareAssistConfig = {
+  shortName?: string;
+  description?: string;
+  macroIndex?: number;
+  actions: GameShareAssistAction[];
+};
+
 export type GameShareImportView = {
   author: string;
   /** ISO 8601，由 UI 在导入成功时写入 */
   importedAt: string;
   planTitle?: string;
   pathwayExternalId?: number;
+  /** 推荐方案栏位 map（键 `3`）；一键辅助分享通常为空 */
   skills: GameShareSkillEntry[];
-  /** 按栏位排序后的连招展示名 */
+  /** 按栏位排序后的连招展示名；一键辅助时为宏步骤名 */
   comboSteps: string[];
   seals: string[];
   awakening: GameShareAwakeningGroup[];
   assistLabel?: string;
+  /** 键 `10` 为完整对象时的解析结果（v101 一键辅助分享） */
+  assistConfig?: GameShareAssistConfig;
+  /** 键 `13`，已知一键辅助分享为 101 */
+  shareFormatVersion?: number;
+  shareKind: 'loadout' | 'assist' | 'unknown';
   shareCode?: string;
 };
 
@@ -411,6 +433,77 @@ function splitCsvNames(line: string): string[] {
     .filter(Boolean);
 }
 
+const SKILL_LIKE_ACTION_PARAM_MIN = 80_000_000;
+
+function isRecord(value: MsgValue): value is Record<string, MsgValue> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function actionParamLabel(actionParam: number): string {
+  if (actionParam >= SKILL_LIKE_ACTION_PARAM_MIN) {
+    return String(actionParam);
+  }
+  if (actionParam >= 1 && actionParam <= 99) {
+    return `栏位 ${actionParam}`;
+  }
+  return `参数 ${actionParam}`;
+}
+
+/** 从键 `10` 的对象形态解析一键辅助宏（`10: 0` 预设引用无动作列表） */
+export function parseAssistConfigFromField10(
+  value: MsgValue | undefined,
+): GameShareAssistConfig | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'number') return undefined;
+  if (!isRecord(value)) return undefined;
+
+  const steps = value.c;
+  if (!Array.isArray(steps)) return undefined;
+
+  const actions: GameShareAssistAction[] = [];
+  for (const item of steps) {
+    if (!Array.isArray(item) || item.length === 0) continue;
+    const head = item[0];
+    if (!isRecord(head)) continue;
+    const rawParam = head.ActionParam;
+    const rawName = head.ActionName;
+    const actionParam =
+      typeof rawParam === 'number'
+        ? rawParam
+        : typeof rawParam === 'string'
+          ? Number(rawParam)
+          : NaN;
+    if (!Number.isFinite(actionParam)) continue;
+    const actionName =
+      typeof rawName === 'number'
+        ? rawName
+        : typeof rawName === 'string'
+          ? Number(rawName)
+          : 0;
+
+    const externalId =
+      actionParam >= SKILL_LIKE_ACTION_PARAM_MIN
+        ? String(Math.trunc(actionParam))
+        : undefined;
+
+    actions.push({
+      actionParam: Math.trunc(actionParam),
+      actionName: Number.isFinite(actionName) ? Math.trunc(actionName) : 0,
+      externalId,
+      name: externalId ?? actionParamLabel(Math.trunc(actionParam)),
+    });
+  }
+
+  if (!actions.length) return undefined;
+
+  return {
+    shortName: typeof value.n === 'string' ? value.n : undefined,
+    description: typeof value.d === 'string' ? value.d : undefined,
+    macroIndex: typeof value.i === 'number' ? value.i : undefined,
+    actions,
+  };
+}
+
 function skillsFromDecodedMap(
   skillMap: Record<string, MsgValue>,
   textNames: string[],
@@ -465,8 +558,16 @@ export function parseGameSharePaste(rawText: string): Omit<GameShareImportView, 
   const pathwayExternalId =
     typeof decoded?.['2'] === 'number' ? decoded['2'] : undefined;
 
-  const planTitle =
+  const shareFormatVersion =
+    typeof decoded?.['13'] === 'number' ? decoded['13'] : undefined;
+
+  const assistConfig = parseAssistConfigFromField10(decoded?.['10']);
+
+  let planTitle =
     typeof decoded?.['11'] === 'string' ? decoded['11'] : undefined;
+  if (!planTitle?.trim() && assistConfig?.shortName) {
+    planTitle = assistConfig.shortName;
+  }
 
   let skills: GameShareSkillEntry[] = [];
   const skillMap = decoded?.['3'];
@@ -480,13 +581,25 @@ export function parseGameSharePaste(rawText: string): Omit<GameShareImportView, 
     }));
   }
 
-  if (!skills.length && !code) {
+  const hasLoadout = skills.length > 0;
+  const hasAssist = (assistConfig?.actions.length ?? 0) > 0;
+
+  if (!hasLoadout && !hasAssist && !code) {
     throw new Error('未找到 [[分享码]] 或「技能：」行，无法解析');
   }
+  if (code && !hasLoadout && !hasAssist) {
+    throw new Error('分享码中未找到技能栏位（键 3）或一键辅助动作（键 10）');
+  }
 
-  const comboSteps = skills.length
+  let shareKind: GameShareImportView['shareKind'] = 'unknown';
+  if (hasAssist && !hasLoadout) shareKind = 'assist';
+  else if (hasLoadout) shareKind = 'loadout';
+
+  const comboSteps = hasLoadout
     ? skills.map((s) => s.name)
-    : textSkillNames;
+    : hasAssist
+      ? assistConfig!.actions.map((a) => a.name)
+      : textSkillNames;
 
   return {
     author,
@@ -497,8 +610,24 @@ export function parseGameSharePaste(rawText: string): Omit<GameShareImportView, 
     seals,
     awakening,
     assistLabel,
+    assistConfig,
+    shareFormatVersion,
+    shareKind,
     shareCode: code,
   };
+}
+
+function enrichAssistActionName(
+  action: GameShareAssistAction,
+  externalIdToName: Map<string, string>,
+): GameShareAssistAction {
+  if (action.externalId) {
+    return {
+      ...action,
+      name: externalIdToName.get(action.externalId) ?? action.name,
+    };
+  }
+  return action;
 }
 
 export function enrichImportedSkills(
@@ -509,10 +638,25 @@ export function enrichImportedSkills(
     ...s,
     name: externalIdToName.get(s.externalId) ?? s.name,
   }));
+
+  const assistConfig = view.assistConfig
+    ? {
+        ...view.assistConfig,
+        actions: view.assistConfig.actions.map((a) =>
+          enrichAssistActionName(a, externalIdToName),
+        ),
+      }
+    : undefined;
+
+  const comboSteps = skills.length
+    ? skills.map((s) => s.name)
+    : (assistConfig?.actions.map((a) => a.name) ?? view.comboSteps);
+
   return {
     ...view,
     skills,
-    comboSteps: skills.map((s) => s.name),
+    assistConfig,
+    comboSteps,
   };
 }
 

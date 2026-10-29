@@ -1,10 +1,6 @@
 import { SealsDisplaySection } from '@/components/seals-display';
-import {
-  enrichImportedSkills,
-  parseGameSharePaste,
-  type ShareDto,
-  type SkillDto,
-} from '@ocr/guide-types';
+import { enrichImportWithSkills } from '@/lib/game-share';
+import { parseGameSharePaste, type ShareDto, type SkillDto } from '@ocr/guide-types';
 
 type Props = {
   share: ShareDto;
@@ -24,10 +20,7 @@ export function ComboShareDetail({ share, skills }: Props) {
   let view = null;
   try {
     const parsed = parseGameSharePaste(share.shareText);
-    view = enrichImportedSkills(
-      { ...parsed, importedAt: share.createdAt },
-      new Map(skills.map((s) => [s.externalId, s.name])),
-    );
+    view = enrichImportWithSkills(parsed, skills, share.createdAt);
   } catch (e) {
     parseError = e instanceof Error ? e.message : '文案解析失败';
   }
@@ -61,7 +54,29 @@ export function ComboShareDetail({ share, skills }: Props) {
             ) : null}
           </div>
 
-          {view.comboSteps.length ? (
+          {view.shareKind === 'assist' && view.assistConfig?.description ? (
+            <p className="import-extra muted">{view.assistConfig.description}</p>
+          ) : null}
+
+          {view.shareKind === 'assist' && view.assistConfig?.actions.length ? (
+            <section className="code-detail-section">
+              <h2>一键辅助步骤</h2>
+              <ol className="combo-list combo-list-readonly">
+                {view.assistConfig.actions.map((step, idx) => (
+                  <li key={`${step.actionParam}-${idx}`} className="combo-item">
+                    <span className="combo-index">{idx + 1}</span>
+                    <div className="combo-item-body">
+                      <div className="combo-item-title">{step.name}</div>
+                      <div className="combo-item-slug">
+                        {step.externalId ? `ID ${step.externalId}` : `参数 ${step.actionParam}`}
+                        {step.actionName ? ` · 动作 ${step.actionName}` : null}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : view.comboSteps.length ? (
             <section className="code-detail-section">
               <h2>连招顺序</h2>
               <ol className="combo-list combo-list-readonly">

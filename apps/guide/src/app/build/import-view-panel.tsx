@@ -41,7 +41,7 @@ export function ImportViewPanel({
     <section className="build-panel import-panel">
       <h2>导入查看</h2>
       <p className="combo-hint muted">
-        粘贴游戏内复制的整段方案文案。
+        粘贴游戏内复制的整段文案（推荐方案或一键辅助分享均可）。
       </p>
 
       <label className="import-draft-label">
@@ -62,7 +62,7 @@ export function ImportViewPanel({
           className="import-draft-text"
           value={draft}
           rows={8}
-          placeholder={'复制该消息，在推荐方案界面…\n[[分享码]]\n技能：…'}
+          placeholder={'复制该消息…\n[[分享码]]\n技能：… 或 一键辅助：…'}
           onChange={(e) => onDraftChange(e.target.value)}
         />
       </label>
@@ -101,7 +101,34 @@ export function ImportViewPanel({
             </div>
           </div>
 
-          {imported.comboSteps.length ? (
+          {imported.planTitle && imported.shareKind === 'assist' ? (
+            <p className="import-extra muted">
+              方案「{imported.planTitle}」
+              {imported.assistConfig?.description
+                ? ` · ${imported.assistConfig.description}`
+                : null}
+            </p>
+          ) : null}
+
+          {imported.shareKind === 'assist' && imported.assistConfig?.actions.length ? (
+            <>
+              <h3 className="import-subtitle">一键辅助步骤</h3>
+              <ol className="combo-list combo-list-readonly">
+                {imported.assistConfig.actions.map((step, idx) => (
+                  <li key={`${step.actionParam}-${idx}`} className="combo-item">
+                    <span className="combo-index">{idx + 1}</span>
+                    <div className="combo-item-body">
+                      <div className="combo-item-title">{step.name}</div>
+                      <div className="combo-item-slug">
+                        {step.externalId ? `ID ${step.externalId}` : `参数 ${step.actionParam}`}
+                        {step.actionName ? ` · 动作 ${step.actionName}` : null}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : imported.comboSteps.length ? (
             <>
               <h3 className="import-subtitle">连招顺序</h3>
               <ol className="combo-list combo-list-readonly">
@@ -124,7 +151,7 @@ export function ImportViewPanel({
               </ol>
             </>
           ) : (
-            <p className="build-empty">未能解析出技能连招</p>
+            <p className="build-empty">未能解析出技能连招或一键辅助步骤</p>
           )}
 
           {imported.awakening.map((g) => (
