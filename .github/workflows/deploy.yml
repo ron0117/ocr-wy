@@ -65,6 +65,11 @@ jobs:
             git fetch origin "$branch"
             git checkout "$branch"
             git merge --ff-only "origin/$branch"
+            echo "部署代码版本: $(git log -1 --oneline)"
+            if grep -q 'build_args\[@\]' deploy/bootstrap-dual-host-centos.sh 2>/dev/null; then
+              echo "bootstrap-dual-host-centos.sh 过旧（SKIP_BUILD 空数组 bug），请确认 main 已 push 后在服务器 git merge。" >&2
+              exit 1
+            fi
             sed -i 's/\r$//' deploy/bootstrap-dual-host-centos.sh deploy/deploy-common.sh 2>/dev/null || true
             case "${STACK:-both}" in
               ocr)
