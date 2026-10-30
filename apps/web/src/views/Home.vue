@@ -159,28 +159,6 @@ const rules = [
 
 const weeks: ScheduleWeek[] = [
   {
-    title: '10 月 14 日 — 10 月 18 日',
-    rows: [
-      { date: '10 月 14 日', weekday: '星期三', activities: ['高原竞逐'], time: '12:00--20:30 报名；20:45--21:15 进行' },
-      { date: '10 月 15 日', weekday: '星期四', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 16 日', weekday: '星期五', activities: ['跨服巨龙'], time: '20:00--20:45 进行' },
-      { date: '10 月 17 日', weekday: '星期六', activities: ['四方联赛', '高原竞逐'], time: '四方联赛：20:00 开始；高原竞逐：12:00--20:30 报名，20:45--21:15 进行' },
-      { date: '10 月 18 日', weekday: '星期天', activities: ['跨服巨龙'], time: '19:00--20:00 进行' },
-    ],
-  },
-  {
-    title: '第一周：非势力战周（10 月 19 日 — 10 月 25 日）',
-    rows: [
-      { date: '10 月 19 日', weekday: '星期一', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 20 日', weekday: '星期二', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 21 日', weekday: '星期三', activities: ['高原竞逐'], time: '12:00--20:30 报名；20:45--21:15 进行' },
-      { date: '10 月 22 日', weekday: '星期四', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 23 日', weekday: '星期五', activities: ['跨服巨龙'], time: '20:00--20:45 进行' },
-      { date: '10 月 24 日', weekday: '星期六', activities: ['四方联赛', '势力战'], time: '四方联赛：20:00 开始；势力战：12:00--20:30 报名，20:45--21:15 进行' },
-      { date: '10 月 25 日', weekday: '星期天', activities: ['跨服巨龙', '四方联赛附加赛'], time: '跨服巨龙：19:00--20:00；附加赛：20:00 开始' },
-    ],
-  },
-  {
     title: '第二周：附加赛周（10 月 26 日 — 11 月 1 日）',
     rows: [
       { date: '10 月 26 日', weekday: '星期一', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },

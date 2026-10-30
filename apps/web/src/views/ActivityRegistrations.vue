@@ -269,16 +269,16 @@ async function saveEdit() {
   saving.value = true;
   formError.value = '';
   try {
-    const updated = await patchRegistration(editId.value, {
+    await patchRegistration(editId.value, {
       clubId: editForm.clubId,
       playerName: editForm.playerName.trim(),
       score: editForm.score,
       profession: editForm.profession,
       attendanceStatus: editForm.attendanceStatus,
     });
-    const index = rows.value.findIndex((item) => item.id === editId.value);
-    if (index >= 0) rows.value[index] = updated;
     editing.value = false;
+    await reload();
+    ElMessage.success('已保存');
   } catch (cause) {
     formError.value = errorMessage(cause, '保存失败');
   } finally {
