@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 COPY packages/guide-types packages/guide-types
 COPY scripts/ensure-guide-skill-names.mjs scripts/ensure-guide-skill-names.mjs
 COPY apps/guide apps/guide
-COPY apps/guide-api/data/sources/skill_names.json apps/guide/data/skill_names.json
+COPY apps/guide-api/data/sources/skill_names.json apps/guide-api/data/sources/skill_names.json
 ENV GUIDE_API_URL=http://guide-api:3001
 RUN pnpm --filter @ocr/guide-types build && pnpm --filter @ocr/guide build
 
