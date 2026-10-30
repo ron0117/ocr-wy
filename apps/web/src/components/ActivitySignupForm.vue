@@ -75,7 +75,9 @@ async function load() {
     startsAt.value = new Date(activity.startsAt).toLocaleString('zh-CN', { hour12: false });
     clubs.value = activity.clubs;
     closed.value = activity.status !== 'PUBLISHED';
-    if (!clubId.value && clubs.value[0]) clubId.value = clubs.value[0].id;
+    if (!activity.clubs.some((club) => club.id === clubId.value)) {
+      clubId.value = '';
+    }
   } catch (cause) {
     error.value = errorMessage(cause, '活动加载失败');
   } finally {

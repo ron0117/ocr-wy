@@ -7,6 +7,10 @@ const src = join(root, 'apps/guide-api/data/sources/skill_names.json');
 const dest = join(root, 'apps/guide/data/skill_names.json');
 
 if (!existsSync(src)) {
+  if (existsSync(dest)) {
+    console.log('[ensure-guide-skill-names] 源文件缺失，已存在目标文件，跳过同步');
+    process.exit(0);
+  }
   console.error(`[ensure-guide-skill-names] 缺少源文件: ${src}`);
   process.exit(1);
 }
