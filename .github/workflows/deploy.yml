@@ -40,7 +40,7 @@ jobs:
           STACK: ${{ github.event_name == 'workflow_dispatch' && inputs.stack || 'both' }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
-          SKIP_BUILD: ${{ github.event_name == 'workflow_run' && '1' || '0' }}
+          SKIP_BUILD: '0'
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}

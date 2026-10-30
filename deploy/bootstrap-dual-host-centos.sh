@@ -5,7 +5,7 @@
 #   sudo bash deploy/bootstrap-dual-host-centos.sh
 #
 # 依赖：.env.production、.env.guide.production（不存在则从 example 生成）。
-# 可选环境变量：MAIN_DOMAIN、WIKI_DOMAIN、CERTBOT_EMAIL、SKIP_BUILD=1
+# 可选环境变量：MAIN_DOMAIN、WIKI_DOMAIN、CERTBOT_EMAIL、SKIP_BUILD=1（仍强制 build web/api，仅跳过 compose up --build）
 
 set -Eeuo pipefail
 
@@ -148,15 +148,21 @@ configure_firewall() {
   fi
 }
 
+ocr_build_app_images() {
+  echo "构建识单 web / api 镜像（使用当前工作区代码）..."
+  docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml build web api
+}
+
 compose_up_stacks() {
   export COMPOSE_PARALLEL_LIMIT=1
   echo "构建并启动识单（回环 9080）..."
   if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
     docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --remove-orphans
+    ocr_build_app_images
   else
     docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --build --remove-orphans
   fi
-  docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --force-recreate web
+  docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml up -d --force-recreate web api
 
   echo "构建并启动 Guide / wiki（回环 9081）..."
   # wiki 前端/API 必须随 git 更新重建；SKIP_BUILD 仅加快识单栈，不影响 Guide
