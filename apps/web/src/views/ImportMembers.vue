@@ -2,7 +2,7 @@
   <div class="page-head">
     <div>
       <h1>导入人员</h1>
-      <p>先选择俱乐部，再上传一张或多张成员列表截图。AI 直接读图，确认后才写入。</p>
+      <p>先选择俱乐部。可以上传成员列表截图，也可以按模版导入。确认后才写入。</p>
     </div>
   </div>
   <el-card v-if="!reviewing" shadow="never" style="max-width: 640px">
@@ -31,14 +31,24 @@
         <div class="el-upload__tip">支持 PNG、JPEG、WebP，一次最多 20 张。选择后会自动压缩再上传，清晰度与识别所用画面一致。未选择俱乐部时不能上传。</div>
       </template>
     </el-upload>
-    <el-button type="primary" style="margin-top: 16px" :disabled="!clubId || fileList.length === 0 || compressing" :loading="recognizing" @click="recognize">
-      开始识别
-    </el-button>
+    <div class="form-actions" style="margin-top: 16px">
+      <el-button type="primary" :disabled="!clubId || fileList.length === 0 || compressing" :loading="recognizing" @click="recognize">
+        开始识别
+      </el-button>
+      <el-button :disabled="!clubId || recognizing" :loading="readingTemplate" @click="openTemplate">模版导入</el-button>
+      <el-button @click="downloadTemplate">下载模版</el-button>
+    </div>
+    <input ref="templateInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden @change="onTemplateFile" />
   </el-card>
   <el-card v-else shadow="never">
-    <p style="margin-top: 0">俱乐部：{{ clubName }}</p>
+    <p style="margin-top: 0">俱乐部：{{ clubName }} · {{ fromTemplate ? '模版' : '截图' }}</p>
     <el-alert title="确认后，这个俱乐部的人员会换成本次名单。同名玩家就地更新，名单里没有的人会被移除。" type="info" show-icon :closable="false" style="margin-bottom: 12px" />
     <el-table :data="drafts" row-key="key" empty-text="没有人员">
+      <el-table-column v-if="fromTemplate" label="排名" width="140">
+        <template #default="{ row }">
+          <el-input-number v-model="row.rank" :min="0" :step="1" :precision="0" controls-position="right" :value-on-clear="0" style="width: 100%" />
+        </template>
+      </el-table-column>
       <el-table-column label="玩家名称" min-width="140">
         <template #default="{ row }">
           <el-input v-model="row.playerName" maxlength="40" />
@@ -106,12 +116,15 @@ import { useNarrow } from '../composables/viewport';
 import { ElMessage } from 'element-plus';
 import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import { confirmMembers, errorMessage, listClubs, previewMembers, renamePrompt, type ClubItem, type ImportMemberRow } from '../api/client';
+import { confirmMembers, confirmTemplateMembers, errorMessage, listClubs, previewMembers, renamePrompt, type ClubItem, type ImportMemberRow, type TemplateMemberRow } from '../api/client';
 import { compressForVision } from './compress-image';
+import templateUrl from '../../docs/模版.xlsx?url';
+import { parseMemberTemplate } from './parse-member-template';
 
 interface DraftRow {
   key: number;
   playerName: string;
+  rank: number | null;
   level: number | null;
   path: string;
   score: number | null;
@@ -128,8 +141,11 @@ const drafts = ref<DraftRow[]>([]);
 const loading = ref(true);
 const compressing = ref(false);
 const recognizing = ref(false);
+const readingTemplate = ref(false);
 const confirming = ref(false);
 const reviewing = ref(false);
+const fromTemplate = ref(false);
+const templateInput = ref<HTMLInputElement>();
 const renaming = ref(false);
 const renameArriving = ref<string[]>([]);
 const renameRows = ref<Array<{ memberId: string; playerName: string; attendanceCount: number; target: string }>>([]);
@@ -225,6 +241,7 @@ async function recognize() {
     drafts.value = result.rows.map((row) => ({
       key: ++draftKey,
       playerName: row.playerName,
+      rank: null,
       level: row.level,
       path: row.path ?? '',
       score: row.score,
@@ -232,6 +249,7 @@ async function recognize() {
       weeklyActivity: row.weeklyActivity,
       joinedText: row.joinedText ?? '',
     }));
+    fromTemplate.value = false;
     reviewing.value = true;
   } catch (cause) {
     ElMessage.error(errorMessage(cause, '识别失败'));
@@ -240,8 +258,46 @@ async function recognize() {
   }
 }
 
+function downloadTemplate() {
+  const link = document.createElement('a');
+  link.href = templateUrl;
+  link.download = '模版.xlsx';
+  link.click();
+}
+
+function openTemplate() {
+  if (!clubId.value) {
+    ElMessage.error('请先选择俱乐部');
+    return;
+  }
+  const input = templateInput.value;
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+async function onTemplateFile(event: Event) {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file || !clubId.value) return;
+  readingTemplate.value = true;
+  try {
+    const rows = await parseMemberTemplate(file);
+    drafts.value = rows.map((row) => ({ key: ++draftKey, ...row }));
+    fromTemplate.value = true;
+    reviewing.value = true;
+  } catch (cause) {
+    ElMessage.error(cause instanceof Error ? cause.message : '模版无法读取');
+  } finally {
+    readingTemplate.value = false;
+  }
+}
+
 function cancelReview() {
   drafts.value = [];
+  fromTemplate.value = false;
   reviewing.value = false;
 }
 
@@ -277,6 +333,19 @@ function confirmPayload(): ImportMemberRow[] | null {
   return rows;
 }
 
+function templatePayload(rows: ImportMemberRow[]): TemplateMemberRow[] | null {
+  const payload: TemplateMemberRow[] = [];
+  for (let index = 0; index < rows.length; index += 1) {
+    const rank = drafts.value[index]?.rank;
+    if (rank === null || !Number.isInteger(rank) || rank < 0) {
+      ElMessage.error('排名必须是大于等于 0 的整数');
+      return null;
+    }
+    payload.push({ ...rows[index], rank });
+  }
+  return payload;
+}
+
 async function confirm(renames?: Array<{ memberId: string; playerName: string }>) {
   if (!clubId.value) {
     ElMessage.error('请先选择俱乐部');
@@ -284,6 +353,23 @@ async function confirm(renames?: Array<{ memberId: string; playerName: string }>
   }
   const rows = confirmPayload();
   if (!rows) return;
+  if (fromTemplate.value) {
+    const templateRows = templatePayload(rows);
+    if (!templateRows) return;
+    confirming.value = true;
+    try {
+      const result = await confirmTemplateMembers(clubId.value, templateRows);
+      drafts.value = [];
+      fromTemplate.value = false;
+      reviewing.value = false;
+      ElMessage.success(`已写入 ${result.rowCount} 条人员`);
+    } catch (cause) {
+      ElMessage.error(errorMessage(cause, '导入失败'));
+    } finally {
+      confirming.value = false;
+    }
+    return;
+  }
   const { files, oversized, invalid } = selectedFiles();
   if (compressing.value) {
     ElMessage.error('图片还在压缩，请稍候');

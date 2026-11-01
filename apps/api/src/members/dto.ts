@@ -87,6 +87,13 @@ export class WriteMemberDto {
   joinedText?: string | null;
 }
 
+export class TemplateImportDto {
+  @IsArray({ message: '校对结果无法解析' })
+  @ArrayMinSize(1, { message: '请提交校对结果' })
+  @ArrayMaxSize(1000, { message: '一次最多确认 1000 人' })
+  rows!: unknown[];
+}
+
 export class DeleteMembersDto {
   @IsArray({ message: '请选择要删除的人员' })
   @ArrayUnique({ message: '人员重复' })

@@ -18,7 +18,7 @@ import type { AuthUser } from '@ocr/shared-types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadExceptionFilter } from '../common/upload-exception.filter';
-import { DeleteMembersDto, ListMembersQuery, WriteMemberDto } from './dto';
+import { DeleteMembersDto, ListMembersQuery, TemplateImportDto, WriteMemberDto } from './dto';
 import { MembersService } from './members.service';
 
 @Controller()
@@ -55,6 +55,15 @@ export class MembersController {
     @Body('rows') rows?: string,
   ) {
     return this.members.confirmImport(user, clubId, files ?? [], rows);
+  }
+
+  @Post('clubs/:clubId/imports/template')
+  importTemplate(
+    @CurrentUser() user: AuthUser,
+    @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
+    @Body() body: TemplateImportDto,
+  ) {
+    return this.members.confirmTemplate(user, clubId, body.rows);
   }
 
   @Get('members')

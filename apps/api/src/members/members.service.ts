@@ -16,7 +16,7 @@ import { PrismaService } from '../prisma/prisma.module';
 import { StorageService } from '../storage/storage.service';
 import { ListMembersQuery, WriteMemberDto, type MemberSort } from './dto';
 import { MemberAiService } from './member-ai.service';
-import { cleanVisionRows, ConfirmRowsError, mergeVisionRows, parseConfirmRows, type VisionMemberRow } from './vision-members';
+import { cleanVisionRows, ConfirmRowsError, mergeVisionRows, parseConfirmRows, parseTemplateRows, type VisionMemberRow } from './vision-members';
 
 interface Change {
   direction: 'up' | 'down';
@@ -134,6 +134,61 @@ export class MembersService {
     }
   }
 
+  async confirmTemplate(user: AuthUser, clubId: string, rowsField: unknown) {
+    await this.clubs.findOwned(user, clubId);
+    const rows = this.readTemplateRows(rowsField);
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const updatedAt = new Date();
+        const current = await tx.member.findMany({ where: { clubId } });
+        const exact = new Map(current.map((member) => [member.playerName, member]));
+        const folded = new Map<string, typeof current>();
+        for (const member of current) {
+          const key = foldPlayerName(member.playerName);
+          const bucket = folded.get(key) ?? [];
+          bucket.push(member);
+          folded.set(key, bucket);
+        }
+        const updates: { id: string; row: (typeof rows)[number]; previousRank: number; previousScore: number | null }[] = [];
+        const creates: typeof rows = [];
+        for (const row of rows) {
+          const existing = matchMember(row.playerName, exact, folded);
+          if (!existing) {
+            creates.push(row);
+            continue;
+          }
+          updates.push({ id: existing.id, row, previousRank: existing.rank, previousScore: existing.score });
+          untrackMember(existing, exact, folded);
+        }
+        const keepIds = new Set(updates.map((item) => item.id));
+        const deleteIds = current.map((member) => member.id).filter((id) => !keepIds.has(id));
+        if (deleteIds.length > 0) {
+          await tx.member.deleteMany({ where: { id: { in: deleteIds } } });
+        }
+        for (const item of updates) {
+          await tx.member.update({
+            where: { id: item.id },
+            data: {
+              ...importFields(item.row),
+              rank: item.row.rank,
+              previousRank: item.previousRank,
+              previousScore: item.previousScore,
+              dataUpdatedAt: updatedAt,
+            },
+          });
+        }
+        for (const row of creates) {
+          await tx.member.create({
+            data: { ...importFields(row), rank: row.rank, clubId, dataUpdatedAt: updatedAt },
+          });
+        }
+        return { rowCount: rows.length, updatedAt: updatedAt.toISOString() };
+      });
+    } catch (error) {
+      this.rethrowDuplicate(error);
+    }
+  }
+
   private async prepareFiles(user: AuthUser, clubId: string, files: Express.Multer.File[]) {
     if (files.length === 0) throw new BadRequestException('请上传图片文件');
     if (files.length > 20) throw new BadRequestException('一次最多上传 20 张图片');
@@ -158,6 +213,15 @@ export class MembersService {
     }
     try {
       return parseConfirmRows(parsed);
+    } catch (error) {
+      if (error instanceof ConfirmRowsError) throw new BadRequestException(error.message);
+      throw error;
+    }
+  }
+
+  private readTemplateRows(rowsField: unknown) {
+    try {
+      return parseTemplateRows(rowsField);
     } catch (error) {
       if (error instanceof ConfirmRowsError) throw new BadRequestException(error.message);
       throw error;

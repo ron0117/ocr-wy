@@ -211,6 +211,15 @@ export async function confirmMembers(
   return data;
 }
 
+export interface TemplateMemberRow extends ImportMemberRow {
+  rank: number;
+}
+
+export async function confirmTemplateMembers(clubId: string, rows: TemplateMemberRow[]) {
+  const { data } = await api.post<{ rowCount: number; updatedAt: string }>(`/clubs/${clubId}/imports/template`, { rows });
+  return data;
+}
+
 export interface MemberInput {
   clubId: string;
   playerName: string;

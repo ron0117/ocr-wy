@@ -8,6 +8,10 @@ export interface VisionMemberRow {
   joinedText: string | null;
 }
 
+export interface TemplateMemberRow extends VisionMemberRow {
+  rank: number;
+}
+
 export const VISION_MEMBER_SYSTEM = `
 你是游戏俱乐部成员表识别助手。用户会给你一张成员列表截图。
 
@@ -104,6 +108,36 @@ export function parseConfirmRows(payload: unknown): VisionMemberRow[] {
   return rows;
 }
 
+export function parseTemplateRows(payload: unknown): TemplateMemberRow[] {
+  if (!Array.isArray(payload)) throw new ConfirmRowsError('校对结果无法解析');
+  if (payload.length === 0) throw new ConfirmRowsError('请提交校对结果');
+  if (payload.length > CONFIRM_MAX_ROWS) throw new ConfirmRowsError('一次最多确认 1000 人');
+  const seen = new Set<string>();
+  const rows: TemplateMemberRow[] = [];
+  for (const item of payload) {
+    if (!item || typeof item !== 'object') throw new ConfirmRowsError('校对结果无法解析');
+    const record = item as Record<string, unknown>;
+    if (typeof record.playerName !== 'string') throw new ConfirmRowsError('请填写玩家名称');
+    const playerName = record.playerName.trim();
+    if (!playerName) throw new ConfirmRowsError('请填写玩家名称');
+    if (playerName.length > TEXT_MAX) throw new ConfirmRowsError('玩家名称过长');
+    const key = playerName.toLowerCase();
+    if (seen.has(key)) throw new ConfirmRowsError('玩家名称重复');
+    seen.add(key);
+    rows.push({
+      playerName,
+      rank: confirmRank(record.rank),
+      level: confirmInt(record.level, '等级', 1),
+      path: confirmText(record.path, '途径'),
+      score: confirmInt(record.score, '非凡评分', 0),
+      fashion: confirmInt(record.fashion, '风尚度', 0),
+      weeklyActivity: confirmInt(record.weeklyActivity, '周活跃', 0),
+      joinedText: confirmText(record.joinedText, '入会时间'),
+    });
+  }
+  return rows;
+}
+
 function completeness(row: VisionMemberRow): number {
   return [row.level, row.path, row.score, row.fashion, row.weeklyActivity, row.joinedText].filter((value) => value !== null)
     .length;
@@ -133,6 +167,15 @@ function readInt(value: unknown): number | null {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
   if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) return Number(value.trim());
   return null;
+}
+
+function confirmRank(value: unknown): number {
+  if (value === null || value === undefined || value === '') return 0;
+  const parsed = readInt(value);
+  if (parsed === null) throw new ConfirmRowsError('排名必须是整数');
+  if (parsed < 0) throw new ConfirmRowsError('排名不能为负');
+  if (parsed > INT32_MAX) throw new ConfirmRowsError('排名超出范围');
+  return parsed;
 }
 
 function confirmInt(value: unknown, label: string, min: number): number | null {
