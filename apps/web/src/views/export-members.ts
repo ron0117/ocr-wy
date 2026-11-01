@@ -71,7 +71,7 @@ export async function downloadMemberWorkbook(
     values.forEach((value, column) => {
       const cell = line.getCell(column + 1);
       cell.value = value;
-      cell.font = cellFont(column, row);
+      cell.font = { name: '微软雅黑', size: 11, color: { argb: 'FF243140' } };
       cell.fill = solid(stripe ? 'FFF7F9FC' : 'FFFFFFFF');
       cell.alignment = {
         vertical: 'middle',
@@ -95,26 +95,11 @@ function rowValues(row: MemberItem, index: number): Array<string | number> {
     row.clubName,
     row.level ?? '',
     row.path ?? '',
-    scoreValue(row),
+    row.score ?? '',
     row.fashion ?? '',
     row.weeklyActivity ?? '',
     row.joinedText ?? '',
   ];
-}
-
-function scoreValue(row: MemberItem): string | number {
-  if (row.score === null) return '';
-  if (!row.scoreChange) return row.score;
-  const arrow = row.scoreChange.direction === 'up' ? '↑' : '↓';
-  return `${row.score} ${arrow}${row.scoreChange.delta}`;
-}
-
-function cellFont(column: number, row: MemberItem): Partial<ExcelJS.Font> {
-  const base = { name: '微软雅黑', size: 11, color: { argb: 'FF243140' } };
-  if (column === 5 && row.scoreChange) {
-    return { ...base, color: { argb: row.scoreChange.direction === 'up' ? 'FF1F7A4D' : 'FFC45656' } };
-  }
-  return base;
 }
 
 function solid(argb: string): ExcelJS.Fill {
