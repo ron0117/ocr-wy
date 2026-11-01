@@ -66,8 +66,9 @@ function findEocd(data: Uint8Array): number {
 }
 
 async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
-  const bytes = data.byteOffset === 0 && data.byteLength === data.buffer.byteLength ? data : data.slice();
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  const buffer = new ArrayBuffer(data.byteLength);
+  new Uint8Array(buffer).set(data);
+  const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
