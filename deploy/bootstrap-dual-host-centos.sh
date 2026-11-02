@@ -101,6 +101,45 @@ resolve_domains() {
   fi
 }
 
+wiki_admin_token_placeholder() {
+  case "$1" in
+    '' | change-me-long-random | change-me) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# 识单 api 与 guide-api 必须使用同一 GUIDE_ADMIN_TOKEN，否则 Wiki 后台删除会 503/401
+sync_wiki_admin_token() {
+  local ocr_token guide_token
+  ocr_token="$(env_val "$OCR_ENV" GUIDE_ADMIN_TOKEN)"
+  guide_token="$(env_val "$GUIDE_ENV" GUIDE_ADMIN_TOKEN)"
+
+  if wiki_admin_token_placeholder "$ocr_token" && wiki_admin_token_placeholder "$guide_token"; then
+    local tok
+    tok="$(random_hex 32)"
+    set_env_var "$OCR_ENV" GUIDE_ADMIN_TOKEN "$tok"
+    set_env_var "$GUIDE_ENV" GUIDE_ADMIN_TOKEN "$tok"
+    echo "已生成并同步 GUIDE_ADMIN_TOKEN（${OCR_ENV} + ${GUIDE_ENV}）"
+    return
+  fi
+
+  if ! wiki_admin_token_placeholder "$ocr_token" && wiki_admin_token_placeholder "$guide_token"; then
+    set_env_var "$GUIDE_ENV" GUIDE_ADMIN_TOKEN "$ocr_token"
+    echo "已将 GUIDE_ADMIN_TOKEN 同步到 ${GUIDE_ENV}"
+    return
+  fi
+
+  if wiki_admin_token_placeholder "$ocr_token" && ! wiki_admin_token_placeholder "$guide_token"; then
+    set_env_var "$OCR_ENV" GUIDE_ADMIN_TOKEN "$guide_token"
+    echo "已将 GUIDE_ADMIN_TOKEN 同步到 ${OCR_ENV}"
+    return
+  fi
+
+  if [[ "$ocr_token" != "$guide_token" ]]; then
+    echo "警告：${OCR_ENV} 与 ${GUIDE_ENV} 的 GUIDE_ADMIN_TOKEN 不一致，Wiki 删除会失败" >&2
+  fi
+}
+
 apply_dual_compose_env() {
   ensure_env_default "$OCR_ENV" DEPLOY_DUAL_HOST "true"
   ensure_env_default "$GUIDE_ENV" DEPLOY_DUAL_HOST "true"
@@ -119,6 +158,7 @@ apply_dual_compose_env() {
   ensure_env_default "$GUIDE_ENV" GUIDE_CERTBOT_DOMAIN "$WIKI_DOMAIN"
   ensure_env_default "$GUIDE_ENV" GUIDE_WEB_ORIGIN "https://${WIKI_DOMAIN}"
   ensure_env_default "$GUIDE_ENV" CERTBOT_EMAIL "$CERTBOT_EMAIL"
+  sync_wiki_admin_token
 }
 
 install_nginx_if_needed() {
