@@ -128,6 +128,7 @@ export const MENU_CATALOG = [
     children: [
       { key: 'accounts', title: '账号管理', path: '/accounts' },
       { key: 'roles', title: '角色管理', path: '/roles' },
+      { key: 'wiki-admin', title: 'Wiki 内容', path: '/wiki-admin' },
     ],
   },
 ] as const;

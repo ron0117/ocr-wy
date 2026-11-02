@@ -11,6 +11,7 @@ import { ArticlesModule } from './articles/articles.module';
 import { SharesModule } from './shares/shares.module';
 import { SkillsModule } from './skills/skills.module';
 import { StorageModule } from './storage/storage.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { StorageModule } from './storage/storage.module';
     SharesModule,
     ArticlesModule,
     StorageModule,
+    AdminModule,
   ],
   controllers: [HealthController, ScenariosController],
 })

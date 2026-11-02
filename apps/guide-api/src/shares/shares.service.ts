@@ -183,4 +183,14 @@ export class SharesService {
       throw new NotFoundException('连招码不存在');
     }
   }
+
+  async deleteById(id: string): Promise<{ deleted: true; id: string }> {
+    if (!id) throw new NotFoundException('连招码不存在');
+    try {
+      await this.prisma.sharedBuild.delete({ where: { id } });
+      return { deleted: true, id };
+    } catch {
+      throw new NotFoundException('连招码不存在');
+    }
+  }
 }

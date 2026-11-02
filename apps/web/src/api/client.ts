@@ -715,6 +715,58 @@ export async function decideApplication(id: string, decision: 'APPROVED' | 'REJE
   return data;
 }
 
+export interface WikiShareListItem {
+  id: string;
+  title?: string;
+  authorName?: string;
+  pathwayProfessionLabel: string;
+  scenarioName?: string;
+  comboStepCount: number;
+  viewCount: number;
+  createdAt: string;
+}
+
+export interface WikiShareListPage {
+  items: WikiShareListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface WikiArticleListItem {
+  id: string;
+  slug: string;
+  title: string;
+  authorName: string;
+  viewCount: number;
+  createdAt: string;
+}
+
+export async function listWikiShares(page: number, pageSize = 20) {
+  const { data } = await api.get<WikiShareListPage>('/wiki-admin/shares', {
+    params: { page, pageSize },
+  });
+  return data;
+}
+
+export async function deleteWikiShare(id: string) {
+  const { data } = await api.delete<{ deleted: true; id: string }>(`/wiki-admin/shares/${encodeURIComponent(id)}`);
+  return data;
+}
+
+export async function listWikiArticles(limit = 50) {
+  const { data } = await api.get<WikiArticleListItem[]>('/wiki-admin/articles', { params: { limit } });
+  return data;
+}
+
+export async function deleteWikiArticle(slug: string) {
+  const { data } = await api.delete<{ deleted: true; slug: string }>(
+    `/wiki-admin/articles/${encodeURIComponent(slug)}`,
+  );
+  return data;
+}
+
 export async function downloadAssistantExport(exportId: string, filename: string) {
   const response = await api.get(`/assistant/exports/${exportId}`, {
     responseType: 'blob',

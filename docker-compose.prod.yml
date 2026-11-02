@@ -40,6 +40,8 @@ services:
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
       SEED_DATABASE: ${SEED_DATABASE:-false}
+      GUIDE_API_URL: ${GUIDE_API_URL:-http://host.docker.internal:3001}
+      GUIDE_ADMIN_TOKEN: ${GUIDE_ADMIN_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

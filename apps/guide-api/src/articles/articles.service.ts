@@ -127,4 +127,14 @@ export class ArticlesService {
       urlPath: `/guides/${row.slug}`,
     };
   }
+
+  async deleteBySlug(slug: string): Promise<{ deleted: true; slug: string }> {
+    if (!slug) throw new NotFoundException('攻略不存在');
+    try {
+      await this.prisma.guideArticle.delete({ where: { slug } });
+      return { deleted: true, slug };
+    } catch {
+      throw new NotFoundException('攻略不存在');
+    }
+  }
 }

@@ -13,6 +13,7 @@ import { MembersModule } from './members/members.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
 import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
+import { WikiAdminModule } from './wiki-admin/wiki-admin.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
     ActivityRegistrationsModule,
     ApplicationsModule,
     XiaoyouModule,
+    WikiAdminModule,
   ],
   controllers: [HealthController],
 })

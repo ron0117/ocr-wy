@@ -28,6 +28,7 @@ services:
       GUIDE_DATABASE_URL: postgresql://${GUIDE_POSTGRES_USER}:${GUIDE_POSTGRES_PASSWORD}@postgres-guide:5432/${GUIDE_POSTGRES_DB}?schema=public
       GUIDE_API_PORT: "3001"
       GUIDE_WEB_ORIGIN: ${GUIDE_WEB_ORIGIN}
+      GUIDE_ADMIN_TOKEN: ${GUIDE_ADMIN_TOKEN:-}
       SEED_GUIDE: ${SEED_GUIDE:-false}
     depends_on:
       postgres-guide:
