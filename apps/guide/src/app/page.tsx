@@ -1,5 +1,6 @@
 import { guideFetch } from '@/lib/api';
 import type { CurrentVersionDto } from '@ocr/guide-types';
+import { MentorSection } from './mentor-section';
 import './home.css';
 
 const FEATURES = [
@@ -130,6 +131,8 @@ export default async function HomePage() {
           })}
         </div>
       </section>
+
+      <MentorSection />
     </div>
   );
 }
