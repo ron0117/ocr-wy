@@ -80,6 +80,10 @@ export function ArticleWriteForm({ pathways }: Props) {
 
   return (
     <div className="article-write">
+      <BackNavLink href="/guides" refresh>
+        返回攻略库
+      </BackNavLink>
+
       <header className="page-header">
         <h1>写攻略</h1>
         <p className="muted page-header-lead">图文会保存到攻略库；插图上传至 COS（wiki/ 前缀）</p>
@@ -199,9 +203,6 @@ export function ArticleWriteForm({ pathways }: Props) {
           >
             {publishing ? '发布中…' : '发布攻略'}
           </button>
-          <BackNavLink href="/guides" refresh>
-            返回攻略库
-          </BackNavLink>
         </div>
       </div>
     </div>
