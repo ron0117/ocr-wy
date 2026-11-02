@@ -31,6 +31,8 @@ ENV GUIDE_API_URL=http://guide-api:3001
 WORKDIR /app
 COPY --from=build /app/apps/guide/.next/standalone ./
 COPY --from=build /app/apps/guide/.next/static ./apps/guide/.next/static
+# standalone 不包含 public，职业图标等静态文件需单独拷入
+COPY --from=build /app/apps/guide/public ./apps/guide/public
 COPY --from=build /app/apps/guide/data/seals ./apps/guide/data/seals
 
 EXPOSE 3000
