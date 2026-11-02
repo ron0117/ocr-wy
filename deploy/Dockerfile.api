@@ -13,10 +13,12 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared-types/package.json packages/shared-types/package.json
+COPY packages/guide-types/package.json packages/guide-types/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY apps/api apps/api
 COPY packages/shared-types packages/shared-types
+COPY packages/guide-types packages/guide-types
 COPY prisma prisma
 RUN pnpm --filter @ocr/api build
 
