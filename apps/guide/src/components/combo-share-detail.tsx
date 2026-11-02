@@ -1,3 +1,4 @@
+import { CopyShareTextButton } from '@/components/copy-share-text-button';
 import { SealsDisplaySection } from '@/components/seals-display';
 import { enrichImportWithSkills } from '@/lib/game-share';
 import { parseGameSharePaste, type ShareDto, type SkillDto } from '@ocr/guide-types';
@@ -112,7 +113,10 @@ export function ComboShareDetail({ share, skills }: Props) {
           ) : null}
 
           <section className="code-detail-section">
-            <h2>原始分享文案</h2>
+            <div className="code-detail-section-head">
+              <h2>原始分享文案</h2>
+              <CopyShareTextButton text={share.shareText} />
+            </div>
             <pre className="code-detail-raw">{share.shareText}</pre>
           </section>
         </>
