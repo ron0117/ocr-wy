@@ -25,6 +25,24 @@
   font-size: 1rem;
 }
 
+.code-detail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.code-detail-section-head h2 {
+  margin: 0;
+}
+
+.code-detail-copy {
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
 .code-detail-raw {
   margin: 0;
   padding: 0.75rem 0.85rem;
