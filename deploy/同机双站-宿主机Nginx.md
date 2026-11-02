@@ -125,7 +125,9 @@ nginx -t && systemctl reload nginx
 
 | 文件 | 关键项 |
 |------|--------|
-| `.env.production` | `DEPLOY_DUAL_HOST=true`、`OCR_PUBLISH_HTTP=127.0.0.1:9080:80`、`OCR_CONTAINER_CERTBOT_DOMAIN=none`、`CERTBOT_DOMAIN` / `WEB_ORIGIN` |
-| `.env.guide.production` | `GUIDE_PUBLISH_HTTP=127.0.0.1:9081:80`、`GUIDE_CONTAINER_CERTBOT_DOMAIN=none`、`GUIDE_CERTBOT_DOMAIN` / `GUIDE_WEB_ORIGIN` |
+| `.env.production` | `DEPLOY_DUAL_HOST=true`、`OCR_PUBLISH_HTTP=127.0.0.1:9080:80`、`OCR_CONTAINER_CERTBOT_DOMAIN=none`、`CERTBOT_DOMAIN` / `WEB_ORIGIN`；Wiki 后台还需 `GUIDE_API_URL=http://guide-api:3001`、`GUIDE_ADMIN_TOKEN`（与 guide 侧一致） |
+| `.env.guide.production` | `GUIDE_PUBLISH_HTTP=127.0.0.1:9081:80`、`GUIDE_CONTAINER_CERTBOT_DOMAIN=none`、`GUIDE_CERTBOT_DOMAIN` / `GUIDE_WEB_ORIGIN`；`GUIDE_ADMIN_TOKEN` 与识单 `.env.production` 相同 |
+
+识单 `api` 与 `guide-api` 通过 Docker 网络 `ocr_guide_internal` 互通（`bootstrap-dual-host-centos.sh` 会自动 `docker network create`）。勿用 `host.docker.internal:3001`（guide-api 未映射宿主机 3001）。
 
 模板见 `deploy/.env.production.example` 与 `deploy/.env.guide.production.example`。`bootstrap-dual-host-centos.sh` **不会覆盖**你已写好的键，只补缺失默认值。

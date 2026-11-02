@@ -111,6 +111,7 @@ apply_dual_compose_env() {
   ensure_env_default "$OCR_ENV" CERTBOT_DOMAIN "$MAIN_DOMAIN"
   ensure_env_default "$OCR_ENV" CERTBOT_EMAIL "$CERTBOT_EMAIL"
   ensure_env_default "$OCR_ENV" WEB_ORIGIN "https://${MAIN_DOMAIN}"
+  ensure_env_default "$OCR_ENV" GUIDE_API_URL "http://guide-api:3001"
 
   ensure_env_default "$GUIDE_ENV" GUIDE_PUBLISH_HTTP "127.0.0.1:9081:80"
   ensure_env_default "$GUIDE_ENV" GUIDE_PUBLISH_HTTPS "127.0.0.1:19081:443"
@@ -153,7 +154,15 @@ ocr_build_app_images() {
   docker compose --env-file "$OCR_ENV" -f docker-compose.prod.yml build web api
 }
 
+ensure_ocr_guide_network() {
+  if ! docker network inspect ocr_guide_internal >/dev/null 2>&1; then
+    echo "创建 Docker 网络 ocr_guide_internal（识单 api ↔ guide-api）..."
+    docker network create ocr_guide_internal
+  fi
+}
+
 compose_up_stacks() {
+  ensure_ocr_guide_network
   export COMPOSE_PARALLEL_LIMIT=1
   echo "构建并启动识单（回环 9080）..."
   if [[ "${SKIP_BUILD:-0}" == "1" ]]; then

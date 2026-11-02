@@ -24,6 +24,9 @@ services:
         APT_MIRROR: ${APT_MIRROR:-}
         NPM_REGISTRY: ${NPM_REGISTRY:-}
     restart: unless-stopped
+    networks:
+      - default
+      - ocr_guide_internal
     environment:
       GUIDE_DATABASE_URL: postgresql://${GUIDE_POSTGRES_USER}:${GUIDE_POSTGRES_PASSWORD}@postgres-guide:5432/${GUIDE_POSTGRES_DB}?schema=public
       GUIDE_API_PORT: "3001"
@@ -96,3 +99,8 @@ volumes:
   postgres_guide_data:
   certbot_guide_www:
   letsencrypt_guide:
+
+networks:
+  ocr_guide_internal:
+    name: ocr_guide_internal
+    external: true
