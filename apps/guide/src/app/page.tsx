@@ -121,14 +121,6 @@ export default async function HomePage() {
           <p className="home-banner-kicker">Lord of the Mysteries · 粉丝工具</p>
           <h1>无忧玩家工具</h1>
           <p className="home-banner-lead">查攻略 · 配连招 · 分享一键码</p>
-          {version ? (
-            <p className="home-banner-meta muted">
-              数据版本 {version.semver}
-              {version.verifiedAt ? ` · 核验 ${version.verifiedAt.slice(0, 10)}` : null}
-            </p>
-          ) : (
-            <p className="home-banner-meta muted">尚未导入数据，请先运行 guide:import。</p>
-          )}
         </div>
       </section>
 
