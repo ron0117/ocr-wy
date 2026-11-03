@@ -1,4 +1,4 @@
-/** 公测六大职业导师专区。href 填外链后，首页点击会 window.open。 */
+/** 公测六大职业导师专区。isWebsite 为 true 时点开 href；为 false 时站内展示 articleFile。 */
 export type MentorEntry = {
   slug: string;
   name: string;
@@ -7,6 +7,9 @@ export type MentorEntry = {
   /** 途径代表色，用于给白底剪影图标着色 */
   color: string;
   href: string;
+  isWebsite: boolean;
+  /** isWebsite 为 false 时，读取 src/lib/mentors-article 下的这篇 Markdown */
+  articleFile?: string;
 };
 
 export const MENTORS: MentorEntry[] = [
@@ -17,6 +20,7 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200003.png',
     color: '#c5ceda',
     href: '',
+    isWebsite: true,
   },
   {
     slug: 'dreamer',
@@ -25,6 +29,8 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200002.png',
     color: '#B8DFFF',
     href: '',
+    isWebsite: false,
+    articleFile: '观众攻略.md',
   },
   {
     slug: 'hermit',
@@ -33,6 +39,8 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200007.png',
     color: '#c49bff',
     href: '',
+    isWebsite: false,
+    articleFile: '窥秘人_GVG与6V6攻略.md',
   },
   {
     slug: 'door',
@@ -41,6 +49,7 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200005.png',
     color: '#6cb4ff',
     href: '',
+    isWebsite: true,
   },
   {
     slug: 'giant',
@@ -49,6 +58,7 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200006.png',
     color: '#e0894a',
     href: 'https://docs.qq.com/doc/DYWxWUGFiQWJQa3FD',
+    isWebsite: true,
   },
   {
     slug: 'sun',
@@ -57,5 +67,6 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200001.png',
     color: '#f6c445',
     href: 'https://zephyr-eyes.com/',
+    isWebsite: true,
   },
 ];

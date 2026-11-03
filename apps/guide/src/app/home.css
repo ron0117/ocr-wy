@@ -180,6 +180,7 @@
   background: var(--surface);
   color: inherit;
   font: inherit;
+  text-decoration: none;
   cursor: pointer;
   min-height: 8.25rem;
   transition:
