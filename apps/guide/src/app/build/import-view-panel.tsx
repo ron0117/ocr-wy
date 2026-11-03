@@ -7,12 +7,9 @@ type Props = {
   draft: string;
   importError: string | null;
   imported: GameShareImportView | null;
-  saveError: string | null;
-  saving: boolean;
   onPlanTitleChange: (value: string) => void;
   onDraftChange: (value: string) => void;
   onImport: () => void;
-  onSave: () => void;
   onClear: () => void;
 };
 
@@ -29,12 +26,9 @@ export function ImportViewPanel({
   draft,
   importError,
   imported,
-  saveError,
-  saving,
   onPlanTitleChange,
   onDraftChange,
   onImport,
-  onSave,
   onClear,
 }: Props) {
   return (
@@ -74,14 +68,6 @@ export function ImportViewPanel({
         <button
           type="button"
           className="btn-ghost"
-          disabled={!imported || saving || !planTitle.trim()}
-          onClick={onSave}
-        >
-          {saving ? '保存中…' : '保存到连招码'}
-        </button>
-        <button
-          type="button"
-          className="btn-ghost"
           disabled={!draft && !imported}
           onClick={onClear}
         >
@@ -90,7 +76,6 @@ export function ImportViewPanel({
       </div>
 
       {importError ? <div className="build-error import-error">{importError}</div> : null}
-      {saveError ? <div className="build-error import-error">{saveError}</div> : null}
 
       {imported ? (
         <div className="import-result">
