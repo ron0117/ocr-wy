@@ -59,12 +59,6 @@
   text-align: right;
 }
 
-.club-rankings th:first-child,
-.club-rankings th:nth-child(5),
-.club-rankings th:nth-child(6) {
-  text-align: right;
-}
-
 .club-rankings-top--1 .club-rankings-rank {
   color: #f3d48a;
   font-weight: 700;
