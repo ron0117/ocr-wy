@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, statSync } from 'fs';
 import path from 'path';
 import { puppetsCatalogMarkdownPath, puppetsCatalogRoot } from './puppets-path';
 import { puppetIconUrl } from './puppets-manifest';
@@ -158,15 +158,19 @@ function parseCatalog(md: string): PuppetCatalog {
 }
 
 let cached: PuppetCatalog | null = null;
+let cachedMtimeMs = 0;
 
 export function loadPuppetCatalog(): PuppetCatalog {
-  if (cached) return cached;
   const file = puppetsCatalogMarkdownPath();
   if (!existsSync(file)) {
     cached = { items: [], usageNotes: [] };
+    cachedMtimeMs = 0;
     return cached;
   }
+  const mtimeMs = statSync(file).mtimeMs;
+  if (cached && cachedMtimeMs === mtimeMs) return cached;
   cached = parseCatalog(readFileSync(file, 'utf8'));
+  cachedMtimeMs = mtimeMs;
   return cached;
 }
 
