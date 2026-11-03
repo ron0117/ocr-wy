@@ -1,29 +1,20 @@
 'use client';
 
 import {
-  calcLoadoutStats,
   parseGameSharePaste,
   type CurrentVersionDto,
   type GameShareImportView,
-  type GearDto,
-  type LoadoutDto,
   type PathwayDto,
   type PlayScenarioDto,
   type SkillDto,
 } from '@ocr/guide-types';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiBase } from '@/lib/api';
-import {
-  formatStatValue,
-  GEAR_SLOT_LABELS,
-  GEAR_SLOT_ORDER,
-  statLabel,
-} from '@/lib/labels';
 import { enrichImportWithSkills } from '@/lib/game-share';
-import { ImportedSealsPanel } from './imported-seals-panel';
 import { ImportViewPanel } from './import-view-panel';
 import { PuppetPicker, type PuppetChoice } from './puppet-picker';
+import { orderSealNames, SealPicker, sealsFromPaste, type SealChoice } from './seal-picker';
 import './build.css';
 
 async function clientFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -38,33 +29,22 @@ async function clientFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-function orderedSlots(slots: Record<string, string>): string[] {
-  const keys = new Set(Object.keys(slots));
-  const ordered: string[] = GEAR_SLOT_ORDER.filter((s) => keys.has(s));
-  for (const k of keys) {
-    if (!ordered.includes(k)) ordered.push(k);
-  }
-  return ordered;
-}
-
 export function BuildWorkbench({
   searchParams,
   puppets,
+  seals,
 }: {
   searchParams: Promise<{ pathway?: string; loadout?: string }>;
   puppets: PuppetChoice[];
+  seals: SealChoice[];
 }) {
   const router = useRouter();
-  const [initialLoadoutSlug, setInitialLoadoutSlug] = useState<string | undefined>();
   const [pathwaySlug, setPathwaySlug] = useState('sun');
   const [scenarioCode, setScenarioCode] = useState('PVE');
   const [pathways, setPathways] = useState<PathwayDto[]>([]);
   const [scenarios, setScenarios] = useState<PlayScenarioDto[]>([]);
   const [version, setVersion] = useState<CurrentVersionDto | null>(null);
-  const [gearList, setGearList] = useState<GearDto[]>([]);
   const [skills, setSkills] = useState<SkillDto[]>([]);
-  const [recommended, setRecommended] = useState<LoadoutDto | null>(null);
-  const [gearSlots, setGearSlots] = useState<Record<string, string>>({});
   const [planTitle, setPlanTitle] = useState('');
   const [importDraft, setImportDraft] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
@@ -73,13 +53,14 @@ export function BuildWorkbench({
   const [imported, setImported] = useState<GameShareImportView | null>(null);
   const [selectedPuppets, setSelectedPuppets] = useState<string[]>([]);
   const [puppetHint, setPuppetHint] = useState<string | null>(null);
+  const [selectedSeals, setSelectedSeals] = useState<string[]>([]);
+  const [sealHint, setSealHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void searchParams.then((sp) => {
       if (sp.pathway) setPathwaySlug(sp.pathway);
-      if (sp.loadout) setInitialLoadoutSlug(sp.loadout);
     });
   }, [searchParams]);
 
@@ -100,41 +81,20 @@ export function BuildWorkbench({
     })();
   }, []);
 
-  const applyLoadout = useCallback((loadout: LoadoutDto) => {
-    setRecommended(loadout);
-    setGearSlots({ ...loadout.gearSlots });
-  }, []);
-
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const loadoutQuery = initialLoadoutSlug
-        ? clientFetch<LoadoutDto>(`/loadouts/${initialLoadoutSlug}`).then((one) => [one])
-        : clientFetch<LoadoutDto[]>(
-            `/loadouts?pathway=${encodeURIComponent(pathwaySlug)}&scenario=${encodeURIComponent(scenarioCode)}`,
-          );
-
-      const [gear, skillRows, loadouts] = await Promise.all([
-        clientFetch<GearDto[]>(`/gear?pathway=${encodeURIComponent(pathwaySlug)}`),
-        clientFetch<SkillDto[]>(`/skills?pathway=${encodeURIComponent(pathwaySlug)}`),
-        loadoutQuery,
-      ]);
-      setGearList(gear);
+      const skillRows = await clientFetch<SkillDto[]>(
+        `/skills?pathway=${encodeURIComponent(pathwaySlug)}`,
+      );
       setSkills(skillRows);
-      const loadout = loadouts[0];
-      if (loadout) {
-        applyLoadout(loadout);
-      } else {
-        setRecommended(null);
-        setGearSlots({});
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [pathwaySlug, scenarioCode, initialLoadoutSlug, applyLoadout]);
+  }, [pathwaySlug]);
 
   useEffect(() => {
     void loadData();
@@ -146,21 +106,6 @@ export function BuildWorkbench({
     router.replace(`/build?${params.toString()}`);
   };
 
-  const stats = useMemo(() => {
-    const map = new Map(gearList.map((g) => [g.slug, g]));
-    return calcLoadoutStats(gearSlots, map);
-  }, [gearSlots, gearList]);
-
-  const statEntries = useMemo(
-    () =>
-      Object.entries(stats.stats).sort(([a], [b]) =>
-        statLabel(a).localeCompare(statLabel(b), 'zh'),
-      ),
-    [stats.stats],
-  );
-
-  const slotKeys = orderedSlots(gearSlots);
-
   const pathwayMeta = pathways.find((p) => p.slug === pathwaySlug);
 
   const runImport = () => {
@@ -169,7 +114,10 @@ export function BuildWorkbench({
     try {
       const parsed = parseGameSharePaste(importDraft);
       const enriched = enrichImportWithSkills(parsed, skills, new Date().toISOString());
+      const picked = sealsFromPaste(enriched.seals, seals);
       setImported(enriched);
+      setSelectedSeals(picked.selected);
+      setSealHint(picked.hint);
     } catch (e) {
       setImported(null);
       setImportError(e instanceof Error ? e.message : String(e));
@@ -184,6 +132,8 @@ export function BuildWorkbench({
     setImported(null);
     setSelectedPuppets([]);
     setPuppetHint(null);
+    setSelectedSeals([]);
+    setSealHint(null);
   };
 
   const togglePuppet = (name: string) => {
@@ -198,6 +148,35 @@ export function BuildWorkbench({
       }
       setPuppetHint(null);
       return [...prev, name];
+    });
+  };
+
+  const toggleSeal = (name: string) => {
+    const item = seals.find((seal) => seal.name === name);
+    if (!item) return;
+    setSelectedSeals((prev) => {
+      if (prev.includes(name)) {
+        setSealHint(null);
+        return orderSealNames(
+          prev.filter((selected) => selected !== name),
+          seals,
+        );
+      }
+      const replaced = prev.some((selected) => {
+        const other = seals.find((seal) => seal.name === selected);
+        return other?.category === item.category;
+      });
+      setSealHint(replaced ? `已换掉原来的${item.categoryLabel}封印物` : null);
+      return orderSealNames(
+        [
+          ...prev.filter((selected) => {
+            const other = seals.find((seal) => seal.name === selected);
+            return other?.category !== item.category;
+          }),
+          name,
+        ],
+        seals,
+      );
     });
   };
 
@@ -219,6 +198,7 @@ export function BuildWorkbench({
           shareText: importDraft.trim(),
           title: name,
           deployedPuppets: selectedPuppets,
+          deployedSeals: selectedSeals,
         }),
       });
       router.push(created.urlPath);
@@ -262,7 +242,6 @@ export function BuildWorkbench({
             onChange={(e) => {
               const v = e.target.value;
               setPathwaySlug(v);
-              setInitialLoadoutSlug(undefined);
               syncUrl(v);
             }}
           >
@@ -283,7 +262,6 @@ export function BuildWorkbench({
             value={scenarioCode}
             onChange={(e) => {
               setScenarioCode(e.target.value);
-              setInitialLoadoutSlug(undefined);
             }}
           >
             {scenarios.map((s) => (
@@ -294,14 +272,6 @@ export function BuildWorkbench({
           </select>
         </label>
         <div className="build-toolbar-actions">
-          <button
-            type="button"
-            className="btn-ghost"
-            disabled={!recommended}
-            onClick={() => recommended && applyLoadout(recommended)}
-          >
-            恢复推荐
-          </button>
           <button type="button" className="btn-ghost" onClick={() => void loadData()}>
             刷新数据
           </button>
@@ -314,12 +284,9 @@ export function BuildWorkbench({
           draft={importDraft}
           importError={importError}
           imported={imported}
-          saveError={saveError}
-          saving={saving}
           onPlanTitleChange={setPlanTitle}
           onDraftChange={setImportDraft}
           onImport={runImport}
-          onSave={() => void saveToCodes()}
           onClear={clearImport}
         />
 
@@ -332,65 +299,26 @@ export function BuildWorkbench({
           />
         ) : null}
 
-        {imported?.seals.length ? (
-          <ImportedSealsPanel sealNames={imported.seals} />
+        {imported ? (
+          <SealPicker
+            seals={seals}
+            selected={selectedSeals}
+            hint={sealHint}
+            onToggle={toggleSeal}
+          />
         ) : null}
 
-        <section className="build-panel">
-          <h2>装备与属性</h2>
-          {slotKeys.length === 0 ? (
-            <p className="build-empty">
-              当前途径暂无装备数据，可在 Git 中维护{' '}
-              <code>gear/{pathwaySlug}.yaml</code> 后重新导入。
-            </p>
-          ) : (
-            <>
-              {slotKeys.map((slot) => (
-                <div key={slot} className="gear-slot-row">
-                  <span className="gear-slot-label">
-                    {GEAR_SLOT_LABELS[slot] ?? slot}
-                  </span>
-                  <select
-                    value={gearSlots[slot] ?? ''}
-                    onChange={(e) =>
-                      setGearSlots((prev) => ({
-                        ...prev,
-                        [slot]: e.target.value,
-                      }))
-                    }
-                  >
-                    {gearList
-                      .filter((g) => g.slot === slot)
-                      .map((g) => (
-                        <option key={g.slug} value={g.slug}>
-                          {g.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              ))}
-              {statEntries.length ? (
-                <dl className="stat-grid">
-                  {statEntries.map(([key, value]) => (
-                    <div key={key} className="stat-item">
-                      <dt>{statLabel(key)}</dt>
-                      <dd>{formatStatValue(key, value)}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
-                <p className="build-empty">暂无属性汇总</p>
-              )}
-              {stats.warnings.length ? (
-                <ul className="build-warnings">
-                  {stats.warnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </>
-          )}
-        </section>
+        <div className="build-save-bar">
+          {saveError ? <div className="build-error import-error">{saveError}</div> : null}
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!imported || saving || !planTitle.trim()}
+            onClick={() => void saveToCodes()}
+          >
+            {saving ? '保存中…' : '保存到连招码'}
+          </button>
+        </div>
       </div>
     </div>
   );

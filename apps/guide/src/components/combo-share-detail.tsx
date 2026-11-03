@@ -28,6 +28,7 @@ export function ComboShareDetail({ share, skills }: Props) {
   }
 
   const scenarioLabel = share.scenarioName ?? share.scenarioCode ?? '—';
+  const sealNames = share.deployedSeals ?? view?.seals ?? [];
 
   return (
     <div className="code-detail">
@@ -46,6 +47,7 @@ export function ComboShareDetail({ share, skills }: Props) {
       </header>
 
       <PuppetsDisplaySection names={share.deployedPuppets ?? []} />
+      <SealsDisplaySection sealNames={sealNames} variant="detail" />
 
       {parseError ? (
         <div className="build-error">{parseError}</div>
@@ -103,8 +105,6 @@ export function ComboShareDetail({ share, skills }: Props) {
               </ol>
             </section>
           ) : null}
-
-          <SealsDisplaySection sealNames={view.seals} variant="detail" />
 
           {view.awakening.map((g) => (
             <p key={g.label} className="import-extra muted">

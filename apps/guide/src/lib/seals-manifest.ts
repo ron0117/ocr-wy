@@ -33,3 +33,15 @@ export function sealIconSrcForName(name: string): string | undefined {
   const file = sealIconFileForName(name);
   return file ? sealIconSrcFromFile(file) : undefined;
 }
+
+/** 攻击、防御、特化。图鉴外的名称排在后面。 */
+export function compareSealNames(a: string, b: string): number {
+  const rank = (name: string) => {
+    const file = sealIconFileForName(name) ?? '';
+    if (file.startsWith('攻击-')) return 0;
+    if (file.startsWith('防御-')) return 1;
+    if (file.startsWith('特化-')) return 2;
+    return 3;
+  };
+  return rank(a) - rank(b);
+}

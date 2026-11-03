@@ -1,13 +1,14 @@
-import { sealIconSrcForName } from '@/lib/seals-manifest';
+import { compareSealNames, sealIconSrcForName } from '@/lib/seals-manifest';
 
 type GridProps = {
   sealNames: string[];
 };
 
 export function SealsDisplayGrid({ sealNames }: GridProps) {
+  const ordered = [...sealNames].sort(compareSealNames);
   return (
     <ul className="import-seals-grid">
-      {sealNames.map((name) => {
+      {ordered.map((name) => {
         const iconSrc = sealIconSrcForName(name);
         const detailHref = `/seals/${encodeURIComponent(name.trim())}`;
         return (

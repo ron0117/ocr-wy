@@ -11,9 +11,16 @@ import { PrismaService } from '../prisma/prisma.module';
 import { PathwaysService } from '../pathways/pathways.service';
 import { CreateShareDto } from './create-share.dto';
 import { normalizeDeployedPuppets } from './puppet-names';
+import { normalizeDeployedSeals } from './seal-names';
 
 function deployedPuppetNames(value: Prisma.JsonValue | null | undefined): string[] {
   if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+}
+
+/** null：旧分享未配置，详情回退到文案。数组：按用户选择展示，空数组表示不带封印物。 */
+function deployedSealNames(value: Prisma.JsonValue | null | undefined): string[] | null {
+  if (!Array.isArray(value)) return null;
   return value.filter((item): item is string => typeof item === 'string');
 }
 
@@ -66,6 +73,8 @@ export class SharesService {
     const authorName = parsed.author;
     const title = this.buildTitle(authorName, undefined, dto.title);
     const deployedPuppets = normalizeDeployedPuppets(dto.deployedPuppets);
+    const deployedSeals =
+      dto.deployedSeals === undefined ? undefined : normalizeDeployedSeals(dto.deployedSeals);
 
     await this.prisma.sharedBuild.create({
       data: {
@@ -78,6 +87,7 @@ export class SharesService {
         authorName,
         comboStepCount: parsed.comboSteps.length,
         deployedPuppets,
+        ...(deployedSeals === undefined ? {} : { deployedSeals }),
       },
     });
     return { id, urlPath: `/codes/${id}` };
@@ -159,6 +169,7 @@ export class SharesService {
     viewCount: number;
     createdAt: Date;
     deployedPuppets: Prisma.JsonValue | null;
+    deployedSeals: Prisma.JsonValue | null;
     pathway: { slug: string; name: string };
     scenario: { code: string; name: string } | null;
   }): ShareDto {
@@ -177,6 +188,7 @@ export class SharesService {
       comboStepCount: row.comboStepCount,
       viewCount: row.viewCount,
       deployedPuppets: deployedPuppetNames(row.deployedPuppets),
+      deployedSeals: deployedSealNames(row.deployedSeals),
       createdAt: row.createdAt.toISOString(),
     };
   }

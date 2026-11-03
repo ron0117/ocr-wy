@@ -33,4 +33,12 @@ export class CreateShareDto {
   @IsString({ each: true, message: '上阵秘偶名称须为字符串' })
   @MaxLength(40, { each: true, message: '上阵秘偶名称最长 40 字' })
   deployedPuppets?: string[];
+
+  /** 攻击、防御、特化各最多 1 件；省略表示不改写，由详情回退到文案 */
+  @IsOptional()
+  @IsArray({ message: '封印物须为名称数组' })
+  @ArrayMaxSize(3, { message: '封印物最多 3 件' })
+  @IsString({ each: true, message: '封印物名称须为字符串' })
+  @MaxLength(40, { each: true, message: '封印物名称最长 40 字' })
+  deployedSeals?: string[];
 }

@@ -76,6 +76,8 @@ export interface ShareCreateBody {
   title: string;
   /** 上阵秘偶名称，0～3 个。省略视为空 */
   deployedPuppets?: string[];
+  /** 站内配置的封印物名称，0～3 件。省略表示沿用文案里的封印物 */
+  deployedSeals?: string[];
 }
 
 export interface ShareCreatedDto {
@@ -96,6 +98,8 @@ export interface ShareDto {
   viewCount: number;
   /** 上阵秘偶名称。旧分享无此列时为空数组 */
   deployedPuppets: string[];
+  /** 站内配置的封印物。null 表示旧分享，详情回退到文案里的「封印物：」 */
+  deployedSeals: string[] | null;
   createdAt: string;
 }
 
