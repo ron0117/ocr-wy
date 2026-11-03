@@ -13,9 +13,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared-types/package.json packages/shared-types/package.json
+COPY packages/guide-types/package.json packages/guide-types/package.json
 RUN pnpm install --frozen-lockfile
 COPY apps/web apps/web
 COPY packages/shared-types packages/shared-types
+COPY packages/guide-types packages/guide-types
 ARG VITE_PUBLIC_ASSET_CDN=
 ARG VITE_PUBLIC_ASSET_OMIT_LOCAL=
 ARG VITE_PUBLIC_ASSET_KEY_PREFIX=
