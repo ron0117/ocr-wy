@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { isMenuKey, type AuthUser } from '@ocr/shared-types';
+import { isMenuKey, SUPER_ONLY_MENU_KEYS, type AuthUser } from '@ocr/shared-types';
 import { Prisma } from '@prisma/client';
 import { AccessService } from '../access/access.service';
 import { PrismaService } from '../prisma/prisma.module';
@@ -113,7 +113,10 @@ export class RolesService {
 
   private cleanMenus(menuKeys: string[]) {
     const unique = [...new Set(menuKeys)];
-    if (unique.some((key) => !isMenuKey(key))) throw new BadRequestException('菜单不正确');
+    const superOnly = new Set<string>(SUPER_ONLY_MENU_KEYS);
+    if (unique.some((key) => !isMenuKey(key) || superOnly.has(key))) {
+      throw new BadRequestException('菜单不正确');
+    }
     return unique;
   }
 

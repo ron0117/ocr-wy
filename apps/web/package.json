@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "pnpm --filter @ocr/shared-types build",
+    "predev": "pnpm --filter @ocr/shared-types build && pnpm --filter @ocr/guide-types build",
     "dev": "vite",
-    "prebuild": "pnpm --filter @ocr/shared-types build",
+    "prebuild": "pnpm --filter @ocr/shared-types build && pnpm --filter @ocr/guide-types build",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@ocr/guide-types": "workspace:*",
     "@ocr/shared-types": "workspace:*",
     "axios": "^1.8.4",
     "element-plus": "^2.14.7",

@@ -15,6 +15,7 @@ import LoginView from './views/Login.vue';
 import MembersView from './views/Members.vue';
 import RolesView from './views/Roles.vue';
 import WikiAdminView from './views/WikiAdmin.vue';
+import ClubRankingImportView from './views/ClubRankingImport.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -37,6 +38,7 @@ export const router = createRouter({
         { path: 'accounts', component: AccountsView, meta: { menu: 'accounts' } },
         { path: 'roles', component: RolesView, meta: { menu: 'roles' } },
         { path: 'wiki-admin', component: WikiAdminView, meta: { menu: 'wiki-admin' } },
+        { path: 'club-ranking-import', component: ClubRankingImportView, meta: { menu: 'club-ranking-import' } },
       ],
     },
     { path: '/tasks', redirect: '/' },

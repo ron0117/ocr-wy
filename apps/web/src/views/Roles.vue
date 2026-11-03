@@ -55,11 +55,13 @@
 import { onMounted, ref } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { ALWAYS_VISIBLE_MENU_KEYS, MENU_CATALOG } from '@ocr/shared-types';
+import { ALWAYS_VISIBLE_MENU_KEYS, MENU_CATALOG, SUPER_ONLY_MENU_KEYS } from '@ocr/shared-types';
+
+const hiddenMenuKeys = new Set<string>([...ALWAYS_VISIBLE_MENU_KEYS, ...SUPER_ONLY_MENU_KEYS]);
 
 const assignableCatalog = MENU_CATALOG.map((group) => ({
   ...group,
-  children: group.children.filter((item) => !(ALWAYS_VISIBLE_MENU_KEYS as readonly string[]).includes(item.key)),
+  children: group.children.filter((item) => !hiddenMenuKeys.has(item.key)),
 }));
 import {
   createRole,

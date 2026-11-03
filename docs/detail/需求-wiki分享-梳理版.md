@@ -4,9 +4,9 @@
 |---|---|
 | 原始需求 | [docs/requirements/wiki分享.md](../requirements/wiki分享.md) |
 | 本文 | docs/detail/需求-wiki分享-梳理版.md |
-| 技术设计 | docs/design/技术设计-wiki分享.md（待写） |
-| 开发计划 | docs/plan/开发计划-wiki分享.md（待写） |
-| 自测方案 | docs/test/自测方案-wiki分享.md（待写） |
+| 技术设计 | [docs/design/技术设计-wiki分享.md](../design/技术设计-wiki分享.md) |
+| 开发计划 | [docs/plan/开发计划-wiki分享.md](../plan/开发计划-wiki分享.md) |
+| 自测方案 | [docs/test/自测方案-wiki分享.md](../test/自测方案-wiki分享.md) |
 | 秘偶资料 | [docs/诡秘之主-秘偶图鉴/诡秘之主-秘偶资料.md](../诡秘之主-秘偶图鉴/诡秘之主-秘偶资料.md) |
 
 ## 1. 产品定位
@@ -149,6 +149,6 @@
 |---|---|---|
 | 原始需求 | `docs/requirements/wiki分享.md` | 已存在 |
 | 需求梳理版 | `docs/detail/需求-wiki分享-梳理版.md` | 本文 |
-| 技术设计 | `docs/design/技术设计-wiki分享.md` | 待步骤 2 |
-| 开发计划 | `docs/plan/开发计划-wiki分享.md` | 待步骤 3 |
-| 自测方案 | `docs/test/自测方案-wiki分享.md` | 待步骤 4 |
+| 技术设计 | `docs/design/技术设计-wiki分享.md` | 已完成 |
+| 开发计划 | `docs/plan/开发计划-wiki分享.md` | 已完成 |
+| 自测方案 | `docs/test/自测方案-wiki分享.md` | 已完成 |

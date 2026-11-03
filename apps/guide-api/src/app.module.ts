@@ -12,6 +12,7 @@ import { SharesModule } from './shares/shares.module';
 import { SkillsModule } from './skills/skills.module';
 import { StorageModule } from './storage/storage.module';
 import { AdminModule } from './admin/admin.module';
+import { ClubRankingsModule } from './club-rankings/club-rankings.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AdminModule } from './admin/admin.module';
     ArticlesModule,
     StorageModule,
     AdminModule,
+    ClubRankingsModule,
   ],
   controllers: [HealthController, ScenariosController],
 })

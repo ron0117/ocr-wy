@@ -99,6 +99,11 @@ export const ALWAYS_VISIBLE_MENU_KEYS = ['activity-registrations'] as const;
 
 export type AlwaysVisibleMenuKey = (typeof ALWAYS_VISIBLE_MENU_KEYS)[number];
 
+/** 只出现在超管侧栏，角色管理不能分配 */
+export const SUPER_ONLY_MENU_KEYS = ['club-ranking-import'] as const;
+
+export type SuperOnlyMenuKey = (typeof SUPER_ONLY_MENU_KEYS)[number];
+
 export const MENU_CATALOG = [
   {
     key: 'club-management',
@@ -129,6 +134,7 @@ export const MENU_CATALOG = [
       { key: 'accounts', title: '账号管理', path: '/accounts' },
       { key: 'roles', title: '角色管理', path: '/roles' },
       { key: 'wiki-admin', title: 'Wiki 内容', path: '/wiki-admin' },
+      { key: 'club-ranking-import', title: '俱乐部数据采集', path: '/club-ranking-import' },
     ],
   },
 ] as const;

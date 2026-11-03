@@ -16,6 +16,7 @@ RUN pnpm install --frozen-lockfile
 
 COPY apps/guide-api apps/guide-api
 RUN mkdir -p apps/guide-api/data
+COPY apps/guide/data/puppets/秘偶图鉴.md apps/guide-api/data/puppets/秘偶图鉴.md
 COPY packages/guide-types packages/guide-types
 COPY prisma/guide prisma/guide
 COPY scripts/guide-import.ts scripts/guide-import.ts

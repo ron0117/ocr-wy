@@ -1,0 +1,81 @@
+.club-rankings h1 {
+  margin: 0.75rem 0 1rem;
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  color: var(--gold-light);
+}
+
+.club-rankings-empty {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgb(0 0 0 / 35%);
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.club-rankings-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  background: #070605;
+}
+
+.club-rankings table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.club-rankings th,
+.club-rankings td {
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.club-rankings th {
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  background: #14110d;
+  border-bottom: 1px solid var(--border);
+}
+
+.club-rankings td {
+  color: var(--text);
+  border-bottom: 1px solid rgb(197 160 89 / 12%);
+}
+
+.club-rankings tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.club-rankings-num,
+.club-rankings-rank {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.club-rankings th:first-child,
+.club-rankings th:nth-child(5),
+.club-rankings th:nth-child(6) {
+  text-align: right;
+}
+
+.club-rankings-top--1 .club-rankings-rank {
+  color: #f3d48a;
+  font-weight: 700;
+}
+
+.club-rankings-top--2 .club-rankings-rank {
+  color: #e7e7ea;
+  font-weight: 700;
+}
+
+.club-rankings-top--3 .club-rankings-rank {
+  color: #e0a06a;
+  font-weight: 700;
+}

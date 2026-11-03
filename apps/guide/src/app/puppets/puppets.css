@@ -1,0 +1,194 @@
+.puppets-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.puppets-intro {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  max-width: 40rem;
+  line-height: 1.5;
+}
+
+.puppets-usage {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  max-width: 40rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.puppets-category {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.puppets-category-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.puppets-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.65rem;
+}
+
+.puppet-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 0.5rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.puppet-card:hover {
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-2px);
+}
+
+.puppet-rarity--red {
+  border-color: #c4453c;
+  color: #e07a72;
+}
+
+.puppet-rarity--orange {
+  border-color: #d4782a;
+  color: #e39a4a;
+}
+
+.puppet-rarity--gold {
+  border-color: #c6a15a;
+  color: var(--gold);
+}
+
+.puppet-rarity--purple {
+  border-color: #8b6bb5;
+  color: #b794e0;
+}
+
+.puppet-card-icon,
+.puppet-detail-icon {
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 25%);
+}
+
+.puppet-card-icon {
+  width: 4rem;
+  height: 4rem;
+}
+
+.puppet-card-icon--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--gold-muted);
+}
+
+.puppet-card-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.25;
+  color: inherit;
+}
+
+.puppet-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.puppet-detail-icon {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.puppet-detail-meta h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 4vw, 1.65rem);
+  color: var(--gold);
+}
+
+.puppet-detail-tag {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.puppet-detail-section {
+  padding: 1rem 1.05rem;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid rgb(197 160 89 / 12%);
+}
+
+.puppet-detail-section h2 {
+  margin: 0 0 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+
+.puppet-detail-section p,
+.puppet-detail-section li {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+.puppet-detail-section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.puppet-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.65rem 1rem;
+}
+
+.puppet-facts dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--gold-muted);
+}
+
+.puppet-facts dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}

@@ -26,6 +26,20 @@ const FEATURES = [
     enabled: true,
   },
   {
+    href: '/puppets',
+    title: '秘偶图鉴',
+    desc: '按红、橙、金、紫查看秘偶技能与推荐',
+    icon: 'puppet',
+    enabled: true,
+  },
+  {
+    href: '/club-rankings',
+    title: '俱乐部排行',
+    desc: '查看全区服俱乐部排行',
+    icon: 'rank',
+    enabled: true,
+  },
+  {
     href: undefined,
     title: '敬请期待',
     desc: '更多工具与资料查询正在筹备',
@@ -66,6 +80,21 @@ function FeatureIcon({ kind }: { kind: (typeof FEATURES)[number]['icon'] }) {
       <svg aria-hidden {...common}>
         <path d="M12 3 4 7v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V7l-8-4Z" />
         <path d="M9.5 12.5 11 14l3.5-4" />
+      </svg>
+    );
+  }
+  if (kind === 'puppet') {
+    return (
+      <svg aria-hidden {...common}>
+        <circle cx="12" cy="5.5" r="2.2" />
+        <path d="M12 7.7v2.2M8 14.2 12 10l4 4.2M8 14.2l-1.2 5.2M16 14.2l1.2 5.2M9.2 12.2h5.6" />
+      </svg>
+    );
+  }
+  if (kind === 'rank') {
+    return (
+      <svg aria-hidden {...common}>
+        <path d="M4 19V9M10 19V5M16 19v-7M20 19H2" />
       </svg>
     );
   }

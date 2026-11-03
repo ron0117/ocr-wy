@@ -14,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
 import { XiaoyouModule } from './xiaoyou/xiaoyou.module';
 import { WikiAdminModule } from './wiki-admin/wiki-admin.module';
+import { ClubRankingsModule } from './club-rankings/club-rankings.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { WikiAdminModule } from './wiki-admin/wiki-admin.module';
     ApplicationsModule,
     XiaoyouModule,
     WikiAdminModule,
+    ClubRankingsModule,
   ],
   controllers: [HealthController],
 })

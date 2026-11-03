@@ -767,6 +767,11 @@ export async function deleteWikiArticle(slug: string) {
   return data;
 }
 
+export async function uploadClubRankings(clubs: unknown) {
+  const { data } = await api.post<{ count: number }>('/club-rankings', { clubs });
+  return data;
+}
+
 export async function downloadAssistantExport(exportId: string, filename: string) {
   const response = await api.get(`/assistant/exports/${exportId}`, {
     responseType: 'blob',

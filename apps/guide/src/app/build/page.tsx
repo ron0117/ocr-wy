@@ -1,3 +1,4 @@
+import { loadPuppetCatalog } from '@/lib/puppets-catalog';
 import { BuildWorkbench } from './workbench';
 
 export default function BuildPage({
@@ -5,5 +6,11 @@ export default function BuildPage({
 }: {
   searchParams: Promise<{ pathway?: string; loadout?: string }>;
 }) {
-  return <BuildWorkbench searchParams={searchParams} />;
+  const puppets = loadPuppetCatalog().items.map((item) => ({
+    name: item.name,
+    rarity: item.rarity,
+    rarityLabel: item.rarityLabel,
+    iconUrl: item.iconUrl,
+  }));
+  return <BuildWorkbench searchParams={searchParams} puppets={puppets} />;
 }

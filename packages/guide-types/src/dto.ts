@@ -74,6 +74,8 @@ export interface ShareCreateBody {
   shareText: string;
   /** 方案名称（必填，保存后与作者组合为列表标题） */
   title: string;
+  /** 上阵秘偶名称，0～3 个。省略视为空 */
+  deployedPuppets?: string[];
 }
 
 export interface ShareCreatedDto {
@@ -92,6 +94,8 @@ export interface ShareDto {
   authorName?: string;
   comboStepCount: number;
   viewCount: number;
+  /** 上阵秘偶名称。旧分享无此列时为空数组 */
+  deployedPuppets: string[];
   createdAt: string;
 }
 

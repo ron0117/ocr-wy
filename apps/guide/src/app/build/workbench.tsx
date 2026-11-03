@@ -23,6 +23,7 @@ import {
 import { enrichImportWithSkills } from '@/lib/game-share';
 import { ImportedSealsPanel } from './imported-seals-panel';
 import { ImportViewPanel } from './import-view-panel';
+import { PuppetPicker, type PuppetChoice } from './puppet-picker';
 import './build.css';
 
 async function clientFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -48,8 +49,10 @@ function orderedSlots(slots: Record<string, string>): string[] {
 
 export function BuildWorkbench({
   searchParams,
+  puppets,
 }: {
   searchParams: Promise<{ pathway?: string; loadout?: string }>;
+  puppets: PuppetChoice[];
 }) {
   const router = useRouter();
   const [initialLoadoutSlug, setInitialLoadoutSlug] = useState<string | undefined>();
@@ -68,6 +71,8 @@ export function BuildWorkbench({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [imported, setImported] = useState<GameShareImportView | null>(null);
+  const [selectedPuppets, setSelectedPuppets] = useState<string[]>([]);
+  const [puppetHint, setPuppetHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -177,6 +182,23 @@ export function BuildWorkbench({
     setImportError(null);
     setSaveError(null);
     setImported(null);
+    setSelectedPuppets([]);
+    setPuppetHint(null);
+  };
+
+  const togglePuppet = (name: string) => {
+    setSelectedPuppets((prev) => {
+      if (prev.includes(name)) {
+        setPuppetHint(null);
+        return prev.filter((item) => item !== name);
+      }
+      if (prev.length >= 3) {
+        setPuppetHint('已选满 3 个');
+        return prev;
+      }
+      setPuppetHint(null);
+      return [...prev, name];
+    });
   };
 
   const saveToCodes = async () => {
@@ -196,6 +218,7 @@ export function BuildWorkbench({
           scenarioCode,
           shareText: importDraft.trim(),
           title: name,
+          deployedPuppets: selectedPuppets,
         }),
       });
       router.push(created.urlPath);
@@ -299,6 +322,15 @@ export function BuildWorkbench({
           onSave={() => void saveToCodes()}
           onClear={clearImport}
         />
+
+        {imported ? (
+          <PuppetPicker
+            puppets={puppets}
+            selected={selectedPuppets}
+            hint={puppetHint}
+            onToggle={togglePuppet}
+          />
+        ) : null}
 
         {imported?.seals.length ? (
           <ImportedSealsPanel sealNames={imported.seals} />

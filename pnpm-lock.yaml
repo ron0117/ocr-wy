@@ -245,6 +245,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: ^2.3.2
         version: 2.3.2(vue@3.5.43(typescript@5.9.3))
+      '@ocr/guide-types':
+        specifier: workspace:*
+        version: link:../../packages/guide-types
       '@ocr/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types

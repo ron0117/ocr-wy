@@ -1,4 +1,5 @@
 import { CopyShareTextButton } from '@/components/copy-share-text-button';
+import { PuppetsDisplaySection } from '@/components/puppets-display';
 import { SealsDisplaySection } from '@/components/seals-display';
 import { enrichImportWithSkills } from '@/lib/game-share';
 import { parseGameSharePaste, type ShareDto, type SkillDto } from '@ocr/guide-types';
@@ -43,6 +44,8 @@ export function ComboShareDetail({ share, skills }: Props) {
           {share.comboStepCount ? ` · ${share.comboStepCount} 步连招` : null}
         </p>
       </header>
+
+      <PuppetsDisplaySection names={share.deployedPuppets ?? []} />
 
       {parseError ? (
         <div className="build-error">{parseError}</div>

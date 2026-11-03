@@ -190,6 +190,8 @@ model SharedBuild {
   authorName      String?
   comboStepCount  Int      @default(0)
   viewCount       Int      @default(0)
+  /** 上阵秘偶名称，0～3 个，顺序为用户选择顺序。旧分享为 null */
+  deployedPuppets Json?
   createdAt       DateTime @default(now())
 
   version  GameVersion   @relation(fields: [versionId], references: [id])
@@ -227,4 +229,13 @@ model GuideArticle {
   updatedAt   DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+/** 全区服俱乐部排行的当前一份。固定 id = current，再次上传覆盖 clubs */
+model ClubRankingCurrent {
+  id        String   @id
+  clubs     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("club_ranking_current")
 }

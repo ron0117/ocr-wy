@@ -10,6 +10,12 @@ import type { Prisma } from '../generated/prisma';
 import { PrismaService } from '../prisma/prisma.module';
 import { PathwaysService } from '../pathways/pathways.service';
 import { CreateShareDto } from './create-share.dto';
+import { normalizeDeployedPuppets } from './puppet-names';
+
+function deployedPuppetNames(value: Prisma.JsonValue | null | undefined): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+}
 
 @Injectable()
 export class SharesService {
@@ -59,6 +65,7 @@ export class SharesService {
     const id = nanoid(10);
     const authorName = parsed.author;
     const title = this.buildTitle(authorName, undefined, dto.title);
+    const deployedPuppets = normalizeDeployedPuppets(dto.deployedPuppets);
 
     await this.prisma.sharedBuild.create({
       data: {
@@ -70,6 +77,7 @@ export class SharesService {
         title,
         authorName,
         comboStepCount: parsed.comboSteps.length,
+        deployedPuppets,
       },
     });
     return { id, urlPath: `/codes/${id}` };
@@ -150,6 +158,7 @@ export class SharesService {
     comboStepCount: number;
     viewCount: number;
     createdAt: Date;
+    deployedPuppets: Prisma.JsonValue | null;
     pathway: { slug: string; name: string };
     scenario: { code: string; name: string } | null;
   }): ShareDto {
@@ -167,6 +176,7 @@ export class SharesService {
       authorName: row.authorName ?? undefined,
       comboStepCount: row.comboStepCount,
       viewCount: row.viewCount,
+      deployedPuppets: deployedPuppetNames(row.deployedPuppets),
       createdAt: row.createdAt.toISOString(),
     };
   }
