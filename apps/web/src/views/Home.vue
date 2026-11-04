@@ -159,18 +159,6 @@ const rules = [
 
 const weeks: ScheduleWeek[] = [
   {
-    title: '第二周：附加赛周（10 月 26 日 — 11 月 1 日）',
-    rows: [
-      { date: '10 月 26 日', weekday: '星期一', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 27 日', weekday: '星期二', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 28 日', weekday: '星期三', activities: ['高原竞逐'], time: '12:00--20:30 报名；20:45--21:15 进行' },
-      { date: '10 月 29 日', weekday: '星期四', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
-      { date: '10 月 30 日', weekday: '星期五', activities: ['跨服巨龙'], time: '20:00--20:45 进行' },
-      { date: '10 月 31 日', weekday: '星期六', activities: ['四方联赛', '高原竞逐'], time: '四方联赛：20:00 开始；高原竞逐：12:00--20:30 报名，20:45--21:15 进行' },
-      { date: '11 月 1 日', weekday: '星期天', activities: ['跨服巨龙'], time: '19:00--20:00 进行' },
-    ],
-  },
-  {
     title: '第三周：非势力战周（11 月 2 日 — 11 月 8 日）',
     rows: [
       { date: '11 月 2 日', weekday: '星期一', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
@@ -179,7 +167,7 @@ const weeks: ScheduleWeek[] = [
       { date: '11 月 5 日', weekday: '星期四', activities: ['终末猎杀'], time: '高倍时间 20:00--21:00' },
       { date: '11 月 6 日', weekday: '星期五', activities: ['跨服巨龙'], time: '20:00--20:45 进行' },
       { date: '11 月 7 日', weekday: '星期六', activities: ['四方联赛', '势力战'], time: '四方联赛：20:00 开始；势力战：12:00--20:30 报名，20:45--21:15 进行' },
-      { date: '11 月 8 日', weekday: '星期天', activities: ['跨服巨龙', '四方联赛附加赛'], time: '跨服巨龙：19:00--20:00；附加赛：20:00 开始' },
+      { date: '11 月 8 日', weekday: '星期天', activities: ['跨服巨龙', '四方联赛附加赛'], time: '跨服巨龙：20:00--20:45；附加赛：20:45 开始' },
     ],
   },
   {
@@ -253,8 +241,10 @@ function startPoints(row: ScheduleRow): StartPoint[] {
     }
     if (activity === '终末猎杀') return [{ activity, phase: '高倍', at: '20:00' }];
     if (activity === '跨服巨龙') {
+      if (row.date === '11 月 8 日') return [{ activity, phase: '集合', at: '19:00', exact: true }];
       return [{ activity, phase: '集合', at: row.weekday === '星期天' ? '19:00' : '20:00' }];
     }
+    if (activity === '四方联赛附加赛' && row.date === '11 月 8 日') return [];
     return [{ activity, phase: '开始', at: '20:00' }];
   });
 }
