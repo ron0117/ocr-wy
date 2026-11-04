@@ -20,7 +20,8 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200003.png',
     color: '#c5ceda',
     href: '',
-    isWebsite: true,
+    isWebsite: false,
+    articleFile: '占卜黄牌流_GVG与6V6攻略.md',
   },
   {
     slug: 'dreamer',
@@ -49,7 +50,8 @@ export const MENTORS: MentorEntry[] = [
     image: '/professions/1200005.png',
     color: '#6cb4ff',
     href: '',
-    isWebsite: true,
+    isWebsite: false,
+    articleFile: '诡秘之主_学徒攻略.md',
   },
   {
     slug: 'giant',
@@ -57,8 +59,9 @@ export const MENTORS: MentorEntry[] = [
     route: '泽森',
     image: '/professions/1200006.png',
     color: '#e0894a',
-    href: 'https://docs.qq.com/doc/DYWxWUGFiQWJQa3FD',
-    isWebsite: true,
+    href: '',
+    articleFile: '诡秘之主_GVG战士防御与输出攻略.md',
+    isWebsite: false,
   },
   {
     slug: 'sun',
