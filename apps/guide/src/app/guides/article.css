@@ -60,6 +60,38 @@
   cursor: not-allowed;
 }
 
+.article-editor-toolbar .btn-ghost.is-active {
+  border-color: var(--border-gold);
+  color: var(--gold);
+}
+
+.article-markdown-input {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  padding: 0.85rem 1rem;
+  border: 0;
+  resize: vertical;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.article-markdown-preview {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.article-markdown-preview .article-prose {
+  margin-top: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .article-editor-body {
   min-height: 16rem;
   padding: 0.85rem 1rem;
