@@ -1,384 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>诡秘之主战略服筛选月活动表</title>
-  <style>
-    :root {
-      color-scheme: light;
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      color: #1d3a56;
-      background: #eef6fc;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #eef6fc;
-    }
-
-    .page {
-      width: min(1200px, 100%);
-      margin: 0 auto;
-      padding: 24px 16px 40px;
-    }
-
-    .beian {
-      margin-top: 24px;
-      text-align: center;
-      font-size: 13px;
-      color: #6d8eab;
-    }
-
-    .beian a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .beian a:hover {
-      color: #1d4f7a;
-      text-decoration: underline;
-    }
-
-    h1 {
-      margin: 0 0 16px;
-      font-size: 22px;
-      font-weight: 650;
-      color: #1d4f7a;
-    }
-
-    .block { margin-bottom: 16px; }
-
-    .alert {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      padding: 12px 16px;
-      border: 1px solid #c6e2f7;
-      border-radius: 8px;
-      background: #f3f9fd;
-      color: #1d4f7a;
-      line-height: 1.6;
-    }
-
-    .alert-mark {
-      flex: none;
-      width: 16px;
-      height: 16px;
-      margin-top: 3px;
-      border-radius: 50%;
-      background: #3a8dde;
-      color: #fff;
-      font-size: 12px;
-      line-height: 16px;
-      text-align: center;
-      font-weight: 700;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #d5e6f4;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .card-head {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding: 14px 16px;
-      border-bottom: 1px solid #e3f0f9;
-      color: #1d4f7a;
-    }
-
-    .card-body { padding: 16px; }
-
-    .table-wrap { overflow-x: auto; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 720px;
-    }
-
-    .rules { min-width: 560px; }
-
-    th, td {
-      border: 1px solid #d5e6f4;
-      padding: 10px 12px;
-      text-align: left;
-      vertical-align: top;
-      line-height: 1.6;
-    }
-
-    th {
-      background: #f7fbfe;
-      color: #1d4f7a;
-      font-weight: 650;
-      white-space: nowrap;
-    }
-
-    .rules th {
-      width: 120px;
-      white-space: nowrap;
-    }
-
-    .clock { font-weight: 700; }
-
-    .rule-notice {
-      margin-top: 4px;
-      color: #ad4e00;
-    }
-
-    .notice-list {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .tag {
-      display: inline-block;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      padding: 0 8px;
-      font-size: 12px;
-      line-height: 22px;
-      white-space: nowrap;
-    }
-
-    .tag-primary { color: #3a8dde; background: #ecf5ff; border-color: #d9ecff; }
-    .tag-success { color: #529b2e; background: #f0f9eb; border-color: #e1f3d8; }
-    .tag-warning { color: #b88230; background: #fdf6ec; border-color: #faecd8; }
-    .tag-danger { color: #c45656; background: #fef0f0; border-color: #fde2e2; }
-    .tag-info { color: #73767a; background: #f4f4f5; border-color: #e9e9eb; }
-
-    .day-focus {
-      display: inline-block;
-      border-radius: 4px;
-      padding: 0 8px;
-      background: #f56c6c;
-      color: #fff;
-      font-size: 12px;
-      line-height: 22px;
-    }
-
-    .tag-plain {
-      color: #73767a;
-      background: #fff;
-      border-color: #e9e9eb;
-    }
-
-    tr.focus td { background: #ffd666; }
-    tr.focus:hover td { background: #ffc53d; }
-    tr.focus td:first-child { box-shadow: inset 4px 0 0 #d46b08; }
-    tr.focus .clock { color: #ad4e00; }
-
-    .notes {
-      margin: 0;
-      padding-left: 1.25em;
-      line-height: 1.7;
-    }
-
-    .notes li + li { margin-top: 8px; }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080b18">
+  <meta name="description" content="无忧诡秘之主公会战略服活动排程，2026年11月9日至12月6日。">
+  <title>无忧诡秘之主 · 战略服活动日程</title>
+  <link rel="stylesheet" href="./schedule/styles.css">
 </head>
 <body>
-  <main class="page">
-    <h1>诡秘之主战略服筛选月活动表</h1>
-
-    <div class="alert block">
-      <span class="alert-mark" aria-hidden="true">i</span>
-      <div>说明：以下内容根据用户提供的截图人工整理。截图未标明年份；时间按图片原文记录。个别被界面遮挡或截断的文字，结合表格重复格式补全，并在备注中说明。</div>
+  <div class="page-glow"></div>
+  <header class="hero" aria-labelledby="page-title">
+    <img class="hero-art" src="./schedule/assets/image5.png" alt="无忧诡秘之主公会日历角色主视觉">
+    <div class="hero-shade"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">STRATEGIC SERVER SCHEDULE</p>
+      <h1 id="page-title">战略服活动日程</h1>
+      <div class="period"><span>2026.11.09</span><i></i><span>12.06</span></div>
+      <p class="hero-note">共 4 周 · 11 月 12 日正式开服</p>
     </div>
+    <a class="scroll-cue" href="#schedule" aria-label="查看日程"><span></span></a>
+  </header>
 
-    <section class="card block">
-      <div class="card-head"><strong>活动时间说明</strong></div>
-      <div class="card-body table-wrap">
-        <table class="rules">
-          <tbody>
-            <tr>
-              <th>高原竞逐</th>
-              <td>
-                <strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行。
-                <div class="rule-notice">提前半小时通知：<strong class="clock">11:30</strong> 报名，<strong class="clock">20:30</strong> 截止报名</div>
-              </td>
-            </tr>
-            <tr>
-              <th>终末猎杀</th>
-              <td>
-                高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong>。
-                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 高倍</div>
-              </td>
-            </tr>
-            <tr>
-              <th>跨服巨龙</th>
-              <td>
-                <strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行；周日场为 <strong class="clock">19:00</strong>--<strong class="clock">20:00</strong> 进行。
-                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 平日集合，<strong class="clock">18:30</strong> 周日集合</div>
-              </td>
-            </tr>
-            <tr>
-              <th>四方联赛</th>
-              <td>
-                <strong class="clock">20:00</strong> 开始。
-                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 开始</div>
-              </td>
-            </tr>
-            <tr>
-              <th>势力战</th>
-              <td>
-                <strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行。
-                <div class="rule-notice">提前半小时通知：<strong class="clock">11:30</strong> 报名，<strong class="clock">20:15</strong> 集合</div>
-              </td>
-            </tr>
-            <tr>
-              <th>附加赛</th>
-              <td>
-                <strong class="clock">20:00</strong> 开始。
-                <div class="rule-notice">提前半小时通知：<strong class="clock">19:30</strong> 开始</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <main id="schedule">
+    <section class="notice reveal">
+      <div class="notice-mark">启</div>
+      <div><strong>战略服开启</strong></div>
+    </section>
+
+    <section class="schedule-shell reveal">
+      <div class="week-heading">
+        <div><span>四周完整排程</span><small>11.09 — 12.06</small></div>
+        <span class="week-count">TOTAL <b>28</b> DAYS</span>
+      </div>
+      <div id="schedule-list" class="schedule-list"></div>
+    </section>
+
+    <section class="rules reveal" aria-labelledby="rules-title">
+      <p class="section-kicker">WEEKLY GUIDE</p>
+      <h2 id="rules-title">每周活动规则</h2>
+      <div class="rule-grid">
+        <article><span class="dot hunt"></span><div><h3>终末猎杀</h3><p>周一至周三、周五全天开放</p><strong>高倍 19:00—20:00</strong></div></article>
+        <article><span class="dot dragon"></span><div><h3>巨龙讨伐</h3><p>周四、周六</p><strong>19:50 开线 · 20:01 刷龙</strong></div></article>
+        <article><span class="dot boss"></span><div><h3>霜陨领主</h3><p>周四晚间</p><strong>20:45—21:20</strong></div></article>
+        <article><span class="dot castle"></span><div><h3>拍卖高原战</h3><p>周六晚间，战略服期间替代猎城战</p><strong>20:45—21:20</strong></div></article>
+        <article><span class="dot feast"></span><div><h3>征服宣令</h3><p>周日两场战斗，宣战时间改变</p><strong>20:45—21:10 · 21:15—21:40</strong></div></article>
+        <article><span class="dot result"></span><div><h3>周排名结算</h3><p>每周日结算</p><strong>21:00</strong></div></article>
       </div>
     </section>
 
-    <section class="card block">
-      <div class="card-head"><strong>第三周：非势力战周（11 月 2 日 — 11 月 8 日）</strong></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>星期</th>
-              <th>活动内容</th>
-              <th>活动时间</th>
-              <th>提前半小时通知</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>11 月 2 日</td>
-              <td>星期一</td>
-              <td><span class="tag tag-danger">终末猎杀</span></td>
-              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
-              <td><strong class="clock">19:30</strong> 高倍</td>
-            </tr>
-            <tr>
-              <td>11 月 3 日</td>
-              <td>星期二</td>
-              <td><span class="tag tag-danger">终末猎杀</span></td>
-              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
-              <td><strong class="clock">19:30</strong> 高倍</td>
-            </tr>
-            <tr>
-              <td>11 月 4 日</td>
-              <td>星期三</td>
-              <td><span class="tag tag-warning">高原竞逐</span></td>
-              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
-              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
-            </tr>
-            <tr>
-              <td>11 月 5 日</td>
-              <td>星期四</td>
-              <td><span class="tag tag-danger">终末猎杀</span></td>
-              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
-              <td><strong class="clock">19:30</strong> 高倍</td>
-            </tr>
-            <tr class="focus">
-              <td>11 月 6 日</td>
-              <td><span class="day-focus">星期五</span></td>
-              <td><span class="tag tag-success">跨服巨龙</span></td>
-              <td><strong class="clock">20:00</strong>--<strong class="clock">20:45</strong> 进行</td>
-              <td><strong class="clock">19:30</strong> 集合</td>
-            </tr>
-            <tr class="focus">
-              <td>11 月 7 日</td>
-              <td><span class="day-focus">星期六</span></td>
-              <td><span class="tags"><span class="tag tag-primary">四方联赛</span><span class="tag tag-danger">势力战</span></span></td>
-              <td>四方联赛：<strong class="clock">20:00</strong> 开始；势力战：<strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名，<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
-              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 势力战报名</div><div><strong class="clock">19:30</strong> 四方联赛</div><div><strong class="clock">20:15</strong> 势力战集合</div></div></td>
-            </tr>
-            <tr class="focus">
-              <td>11 月 8 日</td>
-              <td><span class="day-focus">星期天</span></td>
-              <td><span class="tags"><span class="tag tag-success">跨服巨龙</span><span class="tag tag-info">四方联赛附加赛</span></span></td>
-              <td>跨服巨龙：<strong class="clock">20:00</strong>--<strong class="clock">20:45</strong>；附加赛：<strong class="clock">20:45</strong> 开始</td>
-              <td><strong class="clock">19:00</strong> 跨服巨龙集合</td>
-            </tr>
-          </tbody>
-        </table>
+    <section class="rules reveal" aria-labelledby="patch-title">
+      <p class="section-kicker">11.12 NOTES</p>
+      <h2 id="patch-title">11.12 更新补充</h2>
+      <div class="rule-grid">
+        <article><span class="dot dragon"></span><div><h3>巨龙讨伐</h3><p>战略服关闭主动召唤怪物，提交猩红遗物不再获得征服声望。战功只在讨伐巨龙期间击杀敌对非凡者时获得。</p></div></article>
+        <article><span class="dot castle"></span><div><h3>拍卖高原战</h3><p>本服战略服期间只开高原战，不再开猎城战。非消极参赛达到 20 人开启拍卖，全俱乐部可竞拍，分红只给实际参赛者。消极比赛没有个人参与奖励。</p></div></article>
+        <article><span class="dot feast"></span><div><h3>征服宣令</h3><p>两场战斗调整为 20:45—21:10、21:15—21:40。结算增加建筑伤害。胜者宣言大会调整为 22:00。</p></div></article>
+        <article><span class="dot result"></span><div><h3>人员与拍卖</h3><p>每周加入、退出各限 5 人。每晚 19:00—22:30 不能变更成员，玩法期间不能变更职位。退出战略服俱乐部后 7 天内不能参加战略服拍卖。</p></div></article>
       </div>
     </section>
 
-    <section class="card block">
-      <div class="card-head">
-        <strong>第四周：附加赛周</strong>
-        <span class="tag tag-plain">截图可见部分</span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>星期</th>
-              <th>活动内容</th>
-              <th>活动时间</th>
-              <th>提前半小时通知</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>11 月 9 日</td>
-              <td>星期一</td>
-              <td><span class="tag tag-danger">终末猎杀</span></td>
-              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
-              <td><strong class="clock">19:30</strong> 高倍</td>
-            </tr>
-            <tr>
-              <td>11 月 10 日</td>
-              <td>星期二</td>
-              <td><span class="tag tag-danger">终末猎杀</span></td>
-              <td>高倍时间 <strong class="clock">20:00</strong>--<strong class="clock">21:00</strong></td>
-              <td><strong class="clock">19:30</strong> 高倍</td>
-            </tr>
-            <tr>
-              <td>11 月 11 日</td>
-              <td>星期三</td>
-              <td><span class="tag tag-warning">高原竞逐</span></td>
-              <td><strong class="clock">12:00</strong>--<strong class="clock">20:30</strong> 报名；<strong class="clock">20:45</strong>--<strong class="clock">21:15</strong> 进行</td>
-              <td><div class="notice-list"><div><strong class="clock">11:30</strong> 报名</div><div><strong class="clock">20:30</strong> 截止报名</div></div></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head"><strong>备注</strong></div>
-      <div class="card-body">
-        <ol class="notes">
-          <li>截图中的日期没有标注年份，因此本文未自行补充年份。</li>
-          <li>截图右侧部分区域被短视频界面元素遮挡，但重复出现的活动时间格式较清楚；按相同活动的重复排期整理。</li>
-          <li>第四周只整理截图中可见的日期，不推测截图下方未显示的活动。</li>
-          <li>通知时间按开始时间提前 30 分钟计算：报名取报名开始，集合取进行开始，高倍取高倍开始，开赛取开始时间。高原竞逐的报名截止按 20:30 通知。周五、周六、周日整行已标出。</li>
-        </ol>
-      </div>
-    </section>
-
-    <footer class="beian">
-      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026086959号-1</a>
-    </footer>
   </main>
+
+  <footer>
+    <span>无忧诡秘之主公会</span><i></i><span>以信仰之名 · 共赴未知之境</span><i></i>
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026086959号-1</a>
+  </footer>
+  <script src="./schedule/app.js"></script>
 </body>
 </html>

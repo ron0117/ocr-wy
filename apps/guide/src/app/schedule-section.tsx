@@ -51,7 +51,7 @@ export function ScheduleSection() {
   return (
     <section className="home-section home-schedule">
       <h2 className="home-section-title">活动安排</h2>
-      <p className="home-schedule-lead">战略服筛选月</p>
+      <p className="home-schedule-lead">战略服 · 2026.11.09 — 12.06</p>
 
       <article className="home-schedule-card home-schedule-card--rules">
         <header className="home-schedule-head">
@@ -65,18 +65,20 @@ export function ScheduleSection() {
                   <th scope="row">{rule.name}</th>
                   <td>
                     <TimeText text={rule.detail} />
-                    <div className="home-schedule-rule-notice">
-                      提前半小时通知：
-                      {rule.notices.map((point, index) => (
-                        <span key={point.phase}>
-                          {index > 0 ? '，' : null}
-                          <strong className="home-schedule-clock">
-                            {point.exact ? point.at : notifyAt(point.at)}
-                          </strong>{' '}
-                          {point.phase}
-                        </span>
-                      ))}
-                    </div>
+                    {rule.notices.length > 0 ? (
+                      <div className="home-schedule-rule-notice">
+                        提前半小时通知：
+                        {rule.notices.map((point, index) => (
+                          <span key={point.phase}>
+                            {index > 0 ? '，' : null}
+                            <strong className="home-schedule-clock">
+                              {point.exact ? point.at : notifyAt(point.at)}
+                            </strong>{' '}
+                            {point.phase}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               ))}
