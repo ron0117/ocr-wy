@@ -6,6 +6,13 @@ import './home.css';
 
 const FEATURES = [
   {
+    href: '/strategic-skills',
+    title: '战略服技能',
+    desc: '6 大职业战略技能与完整军衔强化',
+    icon: 'strategy',
+    enabled: true,
+  },
+  {
     href: '/guides',
     title: '攻略库',
     desc: '推荐配装与玩法整理，按途径查阅',
@@ -96,6 +103,14 @@ function FeatureIcon({ kind }: { kind: (typeof FEATURES)[number]['icon'] }) {
     return (
       <svg aria-hidden {...common}>
         <path d="M4 19V9M10 19V5M16 19v-7M20 19H2" />
+      </svg>
+    );
+  }
+  if (kind === 'strategy') {
+    return (
+      <svg aria-hidden {...common}>
+        <path d="M12 3 4.5 7v5c0 4.7 3 8 7.5 9.5 4.5-1.5 7.5-4.8 7.5-9.5V7L12 3Z" />
+        <path d="m8.5 15 7-7M9 9h.01M15 15h.01" />
       </svg>
     );
   }
