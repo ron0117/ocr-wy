@@ -8,7 +8,7 @@ export default function StrategicSkillsPage() {
         <p className="strategic-kicker">STRATEGIC SERVER · 2026.11.12</p>
         <h1>战略服技能查询</h1>
         <p className="muted strategic-intro">
-          现版本共 6 个途径拥有专属战略技能。基础效果与四阶强化完整收录，11 月 12 日调整后的内容已优先更新。
+          现版本共 6 个途径拥有专属战略技能。六个技能完整收录；勇气赞歌四、五阶采用官方公告概述，具体数值以游戏内为准。
         </p>
       </header>
 
@@ -45,7 +45,7 @@ export default function StrategicSkillsPage() {
 
       <aside className="strategic-note">
         <strong>资料口径</strong>
-        <p>战士、窥秘人、占卜家采用 Y1S1.4（11 月 12 日）最新数值；其余以当前游戏内技能详情截图补齐。审判者途径目前没有战略技能条目。</p>
+        <p>战士、窥秘人、占卜家采用 Y1S1.4（11 月 12 日）最新数值；其余以当前游戏内技能详情截图补齐。勇气赞歌四、五阶采用官方公告概述，具体数值以游戏内为准。审判者途径目前没有战略技能条目。</p>
       </aside>
     </div>
   );

@@ -82,11 +82,6 @@ export const scheduleRules: ScheduleRule[] = [
     ],
   },
   {
-    name: '周排名结算',
-    detail: '每周日 21:00。',
-    notices: [{ at: '21:00', phase: '结算' }],
-  },
-  {
     name: '人员与拍卖',
     detail:
       '每周加入、退出各限 5 人。每晚 19:00—22:30 不能变更成员，玩法期间不能变更职位。退出战略服俱乐部后 7 天内不能参加战略服拍卖。',
@@ -114,7 +109,7 @@ function standardWeek(title: string, dates: string[]): ScheduleWeek {
       row(thu, '星期四', ['战略服巨龙讨伐', '霜陨领主'], `战略服巨龙讨伐：${strategicDragonTime}；霜陨领主：20:45—21:20`),
       row(fri, '星期五', ['终末猎杀', '巨龙讨伐'], `终末猎杀：${weekendHuntTime}；巨龙讨伐：${dragonTime}`),
       row(sat, '星期六', ['战略服巨龙讨伐', '势力战（猎城战）'], `战略服巨龙讨伐：${strategicDragonTime}；势力战：20:45`),
-      row(sun, '星期天', ['终末猎杀', '巨龙讨伐', '征服宣令', '周排名结算'], `终末猎杀：${weekendHuntTime}；巨龙讨伐：${dragonTime}；征服宣令：20:45—21:10、21:15—21:40；周排名结算：21:00`),
+      row(sun, '星期天', ['终末猎杀', '巨龙讨伐', '征服宣令'], `终末猎杀：${weekendHuntTime}；巨龙讨伐：${dragonTime}；征服宣令：20:45—21:10、21:15—21:40`),
     ],
   };
 }
@@ -129,7 +124,7 @@ export const scheduleWeeks: ScheduleWeek[] = [
       row('11.12', '星期四', ['战略服巨龙讨伐', '霜陨领主'], `战略服巨龙讨伐：${strategicDragonTime}；霜陨领主：20:45—21:20`),
       row('11.13', '星期五', ['终末猎杀', '巨龙讨伐'], `终末猎杀：${weekendHuntTime}；巨龙讨伐：${dragonTime}`),
       row('11.14', '星期六', ['战略服巨龙讨伐', '势力战（猎城战）'], `战略服巨龙讨伐：${strategicDragonTime}；势力战：20:45`),
-      row('11.15', '星期天', ['终末猎杀', '巨龙讨伐', '征服宣令', '周排名结算'], `终末猎杀：${weekendHuntTime}；巨龙讨伐：${dragonTime}；征服宣令：20:45—21:10、21:15—21:40；周排名结算：21:00`),
+      row('11.15', '星期天', ['终末猎杀', '巨龙讨伐', '征服宣令'], `终末猎杀：${weekendHuntTime}；巨龙讨伐：${dragonTime}；征服宣令：20:45—21:10、21:15—21:40`),
     ],
   },
   standardWeek('第二周：11 月 16 日 — 11 月 22 日', ['11.16', '11.17', '11.18', '11.19', '11.20', '11.21', '11.22']),
@@ -183,7 +178,6 @@ function startPoints(row: ScheduleRow): StartPoint[] {
         { activity, phase: '第二场', at: '21:15' },
       ];
     }
-    if (activity === '周排名结算') return [{ activity, phase: '结算', at: '21:00' }];
     return [];
   });
 }

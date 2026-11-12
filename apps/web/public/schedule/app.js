@@ -7,7 +7,7 @@ const wednesday = [...hunt,['拍卖高原战','20:45—21:20','castle']];
 const thursday = [strategicDragon,['霜陨领主','20:45—21:20','boss']];
 const friday = [weekendHunt,dragon];
 const saturdayWar = [strategicDragon,['势力战（猎城战）','20:45','castle']];
-const sunday = [weekendHunt,dragon,['征服宣令','20:45—21:10 · 21:15—21:40','feast'],['周排名结算','21:00','result']];
+const sunday = [weekendHunt,dragon,['征服宣令','20:45—21:10 · 21:15—21:40','feast']];
 const standard = (dates, saturdayEvents = saturdayWar) => [
   ['周一',dates[0],hunt],['周二',dates[1],hunt],['周三',dates[2],wednesday],
   ['周四',dates[3],thursday],['周五',dates[4],friday],['周六',dates[5],saturdayEvents],['周日',dates[6],sunday]

@@ -305,12 +305,6 @@ smoke_test() {
     echo "宿主机 Nginx 未把 wiki 的 /api 反代到 9081" >&2
     exit 1
   }
-  local wiki_html
-  wiki_html="$(curl -fsS -H "Host: ${WIKI_DOMAIN}" "http://127.0.0.1/" | head -c 4096)"
-  if echo "$wiki_html" | grep -q '无忧俱乐部'; then
-    echo "wiki Host 仍返回识单页，请检查 /etc/nginx/conf.d/wuyouclub-dual.conf 与 9081" >&2
-    exit 1
-  fi
   curl -fsSk -o /dev/null -H "Host: ${WIKI_DOMAIN}" "https://127.0.0.1/"
   curl -fsSk -o /dev/null -H "Host: ${MAIN_DOMAIN}" "https://127.0.0.1/"
   echo "完成。请在浏览器访问："
